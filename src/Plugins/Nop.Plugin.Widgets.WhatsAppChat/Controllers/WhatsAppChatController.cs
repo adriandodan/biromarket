@@ -15,7 +15,8 @@ namespace Nop.Plugin.Widgets.WhatsAppChat.Controllers
             var settings = settingService.LoadSetting<PublicInfoModel>();
             var model = new ConfigurationModel
             {
-                WhatsAppNumber = settings.WhatsAppNumber
+                WhatsAppNumber = settings.WhatsAppNumber,
+                TextMessage = settings.TextMessage
             };
 
             return View("~/Plugins/Widgets.WhatsAppChat/Views/Configure.cshtml", model);
@@ -26,6 +27,7 @@ namespace Nop.Plugin.Widgets.WhatsAppChat.Controllers
         {
             var settings = settingService.LoadSetting<PublicInfoModel>();
             settings.WhatsAppNumber = model.WhatsAppNumber;
+            settings.TextMessage = model.TextMessage;
 
             await settingService.SaveSettingAsync(settings);
 

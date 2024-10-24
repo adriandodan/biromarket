@@ -1,8 +1,8 @@
 ﻿@model ConfigurationModel
 
-@{
-    Layout = "~/Areas/Admin/Views/Shared/_ConfigurePlugin.cshtml";
-}
+@* @{
+    Layout = "_ConfigurePlugin";
+} *@
 
 <form asp-controller="WhatsAppChat" asp-action="Configure" method="post">
     <div class="cards-group">
@@ -15,6 +15,14 @@
                     <div class="col-md-9">
                         <nop-editor asp-for="WhatsAppNumber" />
                         <span asp-validation-for="WhatsAppNumber"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <nop-label asp-for="TextMessage" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="TextMessage" />
+                        <span asp-validation-for="TextMessage"></span>
                     </div>
                 </div>
                 <div class="form-group row">
