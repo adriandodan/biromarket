@@ -13,7 +13,8 @@ namespace Nop.Plugin.Widgets.WhatsAppChat.Components
             var settings = settingService.LoadSetting<PublicInfoModel>();
             var model = new PublicInfoModel
             {
-                WhatsAppNumber = settings.WhatsAppNumber
+                WhatsAppNumber = settings.WhatsAppNumber,
+                TextMessage = settings.TextMessage
             };
             return View("~/Plugins/Widgets.WhatsAppChat/Views/PublicInfo.cshtml", model);
         }
