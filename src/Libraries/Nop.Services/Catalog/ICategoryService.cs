@@ -109,6 +109,9 @@ public partial interface ICategoryService
     /// </returns>
     Task<Category> GetCategoryByIdAsync(int categoryId);
 
+    Task<Category> GetCategoryByNameAsync(string categoryName);
+
+
     /// <summary>
     /// Get categories for which a discount is applied
     /// </summary>

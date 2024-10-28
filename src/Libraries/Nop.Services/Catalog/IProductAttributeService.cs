@@ -45,6 +45,8 @@ public partial interface IProductAttributeService
     /// </returns>
     Task<ProductAttribute> GetProductAttributeByIdAsync(int productAttributeId);
 
+    Task<ProductAttribute> GetProductAttributeByNameAsync(string attributeName);
+
     /// <summary>
     /// Gets product attributes 
     /// </summary>
@@ -100,6 +102,8 @@ public partial interface IProductAttributeService
     /// </returns>
     Task<IList<ProductAttributeMapping>> GetProductAttributeMappingsByProductIdAsync(int productId);
 
+    Task<ProductAttributeMapping> GetProductAttributeMappingsByProductIdAndAttributeIdAsync(int productId, int attributeId);
+
     /// <summary>
     /// Gets a product attribute mapping
     /// </summary>
@@ -154,6 +158,9 @@ public partial interface IProductAttributeService
     /// The task result contains the product attribute value
     /// </returns>
     Task<ProductAttributeValue> GetProductAttributeValueByIdAsync(int productAttributeValueId);
+
+    Task<ProductAttributeValue> GetProductAttributeValueByValueAndAttributeMappingIdAsync(string valueName,
+        int attributeMappingId);
 
     /// <summary>
     /// Inserts a product attribute value
@@ -288,6 +295,7 @@ public partial interface IProductAttributeService
     /// The task result contains the product attribute combination
     /// </returns>
     Task<ProductAttributeCombination> GetProductAttributeCombinationByIdAsync(int productAttributeCombinationId);
+    Task<ProductAttributeCombination> GetProductAttributeCombinationAsync(string variantSku, int productId, string attributesXml);
 
     /// <summary>
     /// Gets a product attribute combination by SKU

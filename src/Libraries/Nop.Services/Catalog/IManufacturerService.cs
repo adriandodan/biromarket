@@ -82,6 +82,7 @@ public partial interface IManufacturerService
     /// The task result contains the manufacturer
     /// </returns>
     Task<Manufacturer> GetManufacturerByIdAsync(int manufacturerId);
+    Task<Manufacturer> GetManufacturerByNameAsync(string manufacturerName);
 
     /// <summary>
     /// Gets the manufacturers by category identifier
