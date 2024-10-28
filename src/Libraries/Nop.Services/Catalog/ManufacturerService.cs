@@ -195,6 +195,12 @@ public partial class ManufacturerService : IManufacturerService
         return await _manufacturerRepository.GetByIdAsync(manufacturerId, cache => default);
     }
 
+    public virtual async Task<Manufacturer> GetManufacturerByNameAsync(string manufacturerName)
+    {
+        var brands = await GetAllManufacturersAsync();
+        return brands.FirstOrDefault(p => p.Name == manufacturerName);
+    }
+
     /// <summary>
     /// Get manufacturers for which a discount is applied
     /// </summary>
