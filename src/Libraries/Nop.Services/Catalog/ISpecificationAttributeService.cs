@@ -75,6 +75,7 @@ public partial interface ISpecificationAttributeService
     /// The task result contains the specification attribute
     /// </returns>
     Task<SpecificationAttribute> GetSpecificationAttributeByIdAsync(int specificationAttributeId);
+    Task<SpecificationAttribute> GetSpecificationAttributeByNameAsync(string specificationAttributeName);
 
     /// <summary>
     /// Gets specification attributes
@@ -157,6 +158,7 @@ public partial interface ISpecificationAttributeService
     /// The task result contains the specification attribute option
     /// </returns>
     Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByIdAsync(int specificationAttributeOption);
+    Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByNameAsync(string specificationAttributeOptionName, int specificationAttributeId);
 
     /// <summary>
     /// Get specification attribute options by identifiers
@@ -289,6 +291,9 @@ public partial interface ISpecificationAttributeService
     /// The task result contains the count
     /// </returns>
     Task<int> GetProductSpecificationAttributeCountAsync(int productId = 0, int specificationAttributeOptionId = 0);
+
+    Task<ProductSpecificationAttribute> GetProductSpecificationAttributeByProductIdAsync(int productId,
+        int specificationAttributeOptionId);
 
     /// <summary>
     /// Get mapped products for specification attribute

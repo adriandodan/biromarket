@@ -61,6 +61,8 @@ public partial interface IProductTagService
     /// </returns>
     Task<ProductTag> GetProductTagByIdAsync(int productTagId);
 
+    Task<ProductTag> GetProductTagByNameAsync(string productTagName);
+
     /// <summary>
     /// Inserts a product-product tag mapping
     /// </summary>
@@ -74,6 +76,7 @@ public partial interface IProductTagService
     /// <param name="productTag">Product tag</param>
     /// <returns>A task that represents the asynchronous operation</returns>
     Task UpdateProductTagAsync(ProductTag productTag);
+    Task InsertProductTagAsync(ProductTag productTag);
 
     /// <summary>
     /// Get number of products
