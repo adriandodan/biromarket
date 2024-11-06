@@ -16,7 +16,6 @@ using Nop.Data;
 using Microsoft.AspNetCore.StaticFiles;
 using ClosedXML.Excel;
 using Nop.Services.Seo;
-using Irony.Parsing;
 
 namespace Nop.Web.Areas.Admin.Controllers;
 
@@ -181,34 +180,26 @@ public class ProductCustomController : BaseAdminController
             await _urlRecordService.SaveSlugAsync(product, await _urlRecordService.ValidateSeNameAsync(product, null, product.Name, true), 0);
 
             // Handle pictures for the product
-            var productPictures = pictures.Split(',').Select(url => url.Trim()).ToArray();
-            var imagePaths = new List<string>();
-            foreach (var url in productPictures)
-            {
-                var imagePathTemp = await DownloadFileAsync(url);
-                imagePaths.Add(imagePathTemp);
-            }
+            var imagePathTemp = await DownloadFileAsync(pictures);
 
-            var productPictureIds = await ImportProductImagesUsingHashAsync(imagePaths, product.Sku);
+            var productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
 
-            foreach (var imagePathTemp in imagePaths)
+            
+            if (!string.IsNullOrEmpty(imagePathTemp))
             {
-                if (!string.IsNullOrEmpty(imagePathTemp))
+                if (!_fileProvider.FileExists(imagePathTemp))
+                    continue;
+
+                try
                 {
-                    if (!_fileProvider.FileExists(imagePathTemp))
-                        continue;
-
-                    try
-                    {
-                        _fileProvider.DeleteFile(imagePathTemp);
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
+                    _fileProvider.DeleteFile(imagePathTemp);
+                }
+                catch
+                {
+                    // ignored
                 }
             }
-
+            
             // Handle brands
             var brandId = await GetBrandIdAsync(brand);
             await UpdateProductBrandAsync(product.Id, brandId);
@@ -217,7 +208,7 @@ public class ProductCustomController : BaseAdminController
             await HandleProductTagsAsync(productTags, product);
 
             // Handle categories
-            var categoryId = await GetCategoryIdAsync(category, productPictureIds.FirstOrDefault());
+            var categoryId = await GetCategoryIdAsync(category, productPictureId);
             await UpdateProductCategoriesAsync(product.Id, categoryId);
 
             // Check for existing product attribute or create it
@@ -241,7 +232,7 @@ public class ProductCustomController : BaseAdminController
             }
 
             // Check for existing product attribute mapping or create it
-            var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecification.Id);
+            var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecificationAttributeOption.Id);
             if (productSpecificationAttributeMapping == null)
             {
                 productSpecificationAttributeMapping = new ProductSpecificationAttribute()
@@ -309,25 +300,27 @@ public class ProductCustomController : BaseAdminController
             }
 
             // Handle attribute combination images
-            if (productPictureIds.Count > 0)
+            if (productPictureId > 0)
             {
                 var attributeCombinationPictures = await _productAttributeService.GetProductAttributeCombinationPicturesAsync(attributeCombination.Id);
-                if (attributeCombinationPictures.Count > 0)
+                var attributeCombinationPicture = attributeCombinationPictures.FirstOrDefault();
+                var pictureId = productPictureId;
                 {
-                    var attributeCombinationPicture = attributeCombinationPictures.FirstOrDefault();
-                    var pictureId = productPictureIds.FirstOrDefault();
+                    if (attributeCombinationPicture == null)
                     {
-                        if (attributeCombinationPicture == null)
+                        var newAttributeCombinationPicture = new ProductAttributeCombinationPicture()
                         {
-                            var newAttributeCombinationPicture = new ProductAttributeCombinationPicture()
-                            {
-                                ProductAttributeCombinationId = attributeCombination.Id, PictureId = pictureId
-                            };
-                            await _productAttributeService.InsertProductAttributeCombinationPictureAsync(
-                                newAttributeCombinationPicture);
-                        }
+                            ProductAttributeCombinationId = attributeCombination.Id, PictureId = pictureId
+                        };
+                        await _productAttributeService.InsertProductAttributeCombinationPictureAsync(
+                            newAttributeCombinationPicture);
+                    }
+                    else
+                    {
+                        attributeCombinationPicture.PictureId = pictureId;
                     }
                 }
+                
             }
         }
     }
@@ -478,7 +471,7 @@ public class ProductCustomController : BaseAdminController
             PageSize = _catalogSettings.DefaultCategoryPageSize,
             PageSizeOptions = _catalogSettings.DefaultCategoryPageSizeOptions,
             Published = true,
-            IncludeInTopMenu = false,
+            IncludeInTopMenu = true,
             AllowCustomersToSelectPageSize = true,
             ShowOnHomepage = showOnHomePage,
             PictureId = imageId
@@ -555,13 +548,12 @@ public class ProductCustomController : BaseAdminController
         return string.Empty;
     }
 
-    /// <returns>A task that represents the asynchronous operation</returns>
-    protected virtual async Task<List<int>> ImportProductImagesUsingHashAsync(IList<string> productPictureMetadata, string productSku)
+    protected virtual async Task<int> ImportProductImageUsingHashAsync(string productPictureMetadata, string productSku)
     {
         // Fetch the product based on SKU
         var product = await _productService.GetProductBySkuAsync(productSku);
         if (product == null)
-            return new List<int>(); // or handle the error if the product does not exist
+            return 0; // or handle the error if the product does not exist
 
         // Load existing product images IDs
         var productsImagesIds = await _productService.GetProductsImagesIdsAsync(new[] { product.Id });
@@ -576,57 +568,54 @@ public class ProductCustomController : BaseAdminController
                 p => p.BinaryData)
             : new Dictionary<int, string>();
 
-        foreach (var picturePath in productPictureMetadata)
+        if (string.IsNullOrEmpty(productPictureMetadata))
+            return 0;
+
+        try
         {
-            if (string.IsNullOrEmpty(picturePath))
-                continue;
+            var mimeType = GetMimeTypeFromFilePath(productPictureMetadata);
+            if (string.IsNullOrEmpty(mimeType))
+                return 0;
 
-            try
+            var newPictureBinary = await _fileProvider.ReadAllBytesAsync(productPictureMetadata);
+            var seoFileName = await _pictureService.GetPictureSeNameAsync(product.Name);
+
+            if (productPictureIds.Any())
             {
-                var mimeType = GetMimeTypeFromFilePath(picturePath);
-                if (string.IsNullOrEmpty(mimeType))
-                    continue;
+                var newImageHash = HashHelper.CreateHash(
+                    newPictureBinary,
+                    ExportImportDefaults.ImageHashAlgorithm,
+                    _dataProvider.SupportedLengthOfBinaryHash - 1);
 
-                var newPictureBinary = await _fileProvider.ReadAllBytesAsync(picturePath);
-                var pictureAlreadyExists = false;
-                var seoFileName = await _pictureService.GetPictureSeNameAsync(product.Name);
-
-                if (productPictureIds.Any())
-                {
-                    var newImageHash = HashHelper.CreateHash(
-                        newPictureBinary,
-                        ExportImportDefaults.ImageHashAlgorithm,
-                        _dataProvider.SupportedLengthOfBinaryHash - 1);
-
-                    // Check if the image already exists
-                    pictureAlreadyExists = allPicturesHashes.Any(existingHash =>
+                // Check if the image already exists and get the PictureId if it does
+                var existingPicture = allPicturesHashes
+                    .FirstOrDefault(existingHash =>
                         existingHash.Value.Equals(newImageHash, StringComparison.OrdinalIgnoreCase));
-                }
 
-                if (pictureAlreadyExists)
-                    return productPictureIds.ToList(); // Skip if the picture already exists
-
-                var newPicture = await _pictureService.InsertPictureAsync(newPictureBinary, mimeType, seoFileName);
-
-                await _productService.InsertProductPictureAsync(new ProductPicture
-                {
-                    PictureId = newPicture.Id,
-                    DisplayOrder = 1,
-                    ProductId = product.Id
-                });
-
-                // Update the product to ensure it has the latest information
-                await _productService.UpdateProductAsync(product);
-                return productPictureIds.ToList();
+                if (!existingPicture.Equals(default(KeyValuePair<int, string>)))
+                    return existingPicture.Key; // Return the existing PictureId
             }
-            catch (Exception ex)
+
+            var newPicture = await _pictureService.InsertPictureAsync(newPictureBinary, mimeType, seoFileName);
+
+            await _productService.InsertProductPictureAsync(new ProductPicture
             {
-                await LogPictureInsertErrorAsync(picturePath, ex);
-            }
-        }
+                PictureId = newPicture.Id,
+                DisplayOrder = 1,
+                ProductId = product.Id
+            });
 
-        return [];
+            // Update the product to ensure it has the latest information
+            await _productService.UpdateProductAsync(product);
+            return newPicture.Id;
+        }
+        catch (Exception ex)
+        {
+            await LogPictureInsertErrorAsync(productPictureMetadata, ex);
+            return 0;
+        }
     }
+
 
     protected virtual string GetMimeTypeFromFilePath(string filePath)
     {

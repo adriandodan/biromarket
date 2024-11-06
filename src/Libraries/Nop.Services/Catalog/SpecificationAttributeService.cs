@@ -647,8 +647,8 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
     {
         var query = _productSpecificationAttributeRepository.Table
             .Where(psa => psa.ProductId == productId)
-            .Where(psa => psa.SpecificationAttributeOptionId == specificationAttributeOptionId);
-        return await query.FirstOrDefaultAsync();
+            .Where(psa => psa.SpecificationAttributeOptionId == specificationAttributeOptionId).ToList();
+        return query.FirstOrDefault();
     }
 
     /// <summary>
