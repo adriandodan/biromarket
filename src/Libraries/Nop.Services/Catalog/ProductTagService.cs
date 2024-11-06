@@ -89,29 +89,11 @@ public partial class ProductTagService : IProductTagService
     }
 
     /// <summary>
-    /// Gets product tag by name
-    /// </summary>
-    /// <param name="name">Product tag name</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the product tag
-    /// </returns>
-    protected virtual async Task<ProductTag> GetProductTagByNameAsync(string name)
-    {
-        var query = from pt in _productTagRepository.Table
-            where pt.Name == name
-            select pt;
-
-        var productTag = await query.FirstOrDefaultAsync();
-        return productTag;
-    }
-
-    /// <summary>
     /// Inserts a product tag
     /// </summary>
     /// <param name="productTag">Product tag</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    protected virtual async Task InsertProductTagAsync(ProductTag productTag)
+    public virtual async Task InsertProductTagAsync(ProductTag productTag)
     {
         await _productTagRepository.InsertAsync(productTag);
     }
@@ -196,6 +178,12 @@ public partial class ProductTagService : IProductTagService
     public virtual async Task<ProductTag> GetProductTagByIdAsync(int productTagId)
     {
         return await _productTagRepository.GetByIdAsync(productTagId, cache => default);
+    }
+
+    public virtual async Task<ProductTag> GetProductTagByNameAsync(string productTagName)
+    {
+        var allProductTags = await GetAllProductTagsAsync();
+        return allProductTags.FirstOrDefault(productTag => productTag.Name == productTagName);
     }
 
     /// <summary>

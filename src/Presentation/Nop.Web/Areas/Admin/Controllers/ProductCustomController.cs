@@ -14,14 +14,13 @@ using ILogger = Nop.Services.Logging.ILogger;
 using Nop.Core.Domain.Media;
 using Nop.Data;
 using Microsoft.AspNetCore.StaticFiles;
-using System.Xml.Linq;
 using ClosedXML.Excel;
 using Nop.Services.Seo;
-using System.Xml;
+using Irony.Parsing;
 
 namespace Nop.Web.Areas.Admin.Controllers;
 
-public partial class ProductCustomController : BaseAdminController
+public class ProductCustomController : BaseAdminController
 {
     private readonly IProductService _productService;
     private readonly IPictureService _pictureService;
@@ -38,6 +37,9 @@ public partial class ProductCustomController : BaseAdminController
     protected readonly IHttpClientFactory _httpClientFactory;
     protected readonly INopDataProvider _dataProvider;
     protected readonly IUrlRecordService _urlRecordService;
+    private readonly IManufacturerService _manufacturerService;
+    private readonly IProductTagService _productTagService;
+    private readonly ISpecificationAttributeService _specificationAttributeService;
 
 
     public ProductCustomController(
@@ -49,7 +51,13 @@ public partial class ProductCustomController : BaseAdminController
         IWorkContext workContext,
         VendorSettings vendorSettings,
         IPermissionService permissionService,
-        IImportManager importManager, IProductAttributeService productAttributeService, CatalogSettings catalogSettings, INopFileProvider fileProvider, ILogger logger, IHttpClientFactory httpClientFactory, INopDataProvider dataProvider, IUrlRecordService urlRecordService)
+        IProductAttributeService productAttributeService,
+        CatalogSettings catalogSettings, 
+        INopFileProvider fileProvider, 
+        ILogger logger, 
+        IHttpClientFactory httpClientFactory, 
+        INopDataProvider dataProvider, 
+        IUrlRecordService urlRecordService, IManufacturerService manufacturerService, IProductTagService productTagService, ISpecificationAttributeService specificationAttributeService)
     {
         _productService = productService;
         _pictureService = pictureService;
@@ -67,6 +75,9 @@ public partial class ProductCustomController : BaseAdminController
         _httpClientFactory = httpClientFactory;
         _dataProvider = dataProvider;
         _urlRecordService = urlRecordService;
+        _manufacturerService = manufacturerService;
+        _productTagService = productTagService;
+        _specificationAttributeService = specificationAttributeService;
     }
 
     [HttpPost]
@@ -109,14 +120,37 @@ public partial class ProductCustomController : BaseAdminController
 
         for (var row = 2; row <= rowCount; row++)
         {
-            var sku = worksheet.Cell(row, 1).GetString().Trim();
-            var productName = worksheet.Cell(row, 2).GetString().Trim();
-            var shortDescription = worksheet.Cell(row, 3).GetString().Trim();
-            var fullDescription = worksheet.Cell(row, 4).GetString().Trim();
-            decimal.TryParse(worksheet.Cell(row, 6).GetString().Trim(), out var price);
+            var column = 1;
+            var sku = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var productName = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var shortDescription = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var fullDescription = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var price);
+            column++;
 
-            var category = worksheet.Cell(row, 7).GetString().Trim();
-            var pictures = worksheet.Cell(row, 8).GetString().Trim();
+            var brand = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var productTags = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var category = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+            var pictures = worksheet.Cell(row, column).GetString().Trim();
+            column++;
+
+            // Handle attributes and combinations
+            var attributeName = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute name is in column 9
+            column++;
+            var attributeValue = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute value is in column 10
+            column++;
+            var variantSku = worksheet.Cell(row, column).GetString().Trim(); // Assuming variant SKU is in column 11
+            column++;
+            decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantPrice);
+            column++;
+            int.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantStockQuantity);
 
             // Load or create the product as before
             var product = await _productService.GetProductBySkuAsync(sku);
@@ -145,9 +179,6 @@ public partial class ProductCustomController : BaseAdminController
 
             //search engine name
             await _urlRecordService.SaveSlugAsync(product, await _urlRecordService.ValidateSeNameAsync(product, null, product.Name, true), 0);
-            // Handle categories
-            var categoryId = await GetCategoryIdAsync(category);
-            await UpdateProductCategoriesAsync(product.Id, categoryId);
 
             // Handle pictures for the product
             var productPictures = pictures.Split(',').Select(url => url.Trim()).ToArray();
@@ -178,12 +209,51 @@ public partial class ProductCustomController : BaseAdminController
                 }
             }
 
-            // Handle attributes and combinations
-            var attributeName = worksheet.Cell(row, 9).GetString().Trim(); // Assuming attribute name is in column 9
-            var attributeValue = worksheet.Cell(row, 10).GetString().Trim(); // Assuming attribute value is in column 10
-            var variantSku = worksheet.Cell(row, 11).GetString().Trim(); // Assuming variant SKU is in column 11
-            decimal.TryParse(worksheet.Cell(row, 12).GetString().Trim(), out var variantPrice);
-            int.TryParse(worksheet.Cell(row, 13).GetString().Trim(), out var variantStockQuantity);
+            // Handle brands
+            var brandId = await GetBrandIdAsync(brand);
+            await UpdateProductBrandAsync(product.Id, brandId);
+
+            // Handle product tags
+            await HandleProductTagsAsync(productTags, product);
+
+            // Handle categories
+            var categoryId = await GetCategoryIdAsync(category, productPictureIds.FirstOrDefault());
+            await UpdateProductCategoriesAsync(product.Id, categoryId);
+
+            // Check for existing product attribute or create it
+            var productSpecification = await _specificationAttributeService.GetSpecificationAttributeByNameAsync(attributeName);
+            if (productSpecification == null)
+            {
+                productSpecification = new SpecificationAttribute() { Name = attributeName };
+                await _specificationAttributeService.InsertSpecificationAttributeAsync(productSpecification);
+            }
+
+            // Check for existing product attribute value or create it
+            var productSpecificationAttributeOption = await _specificationAttributeService.GetSpecificationAttributeOptionByNameAsync(attributeValue, productSpecification.Id);
+            if (productSpecificationAttributeOption == null)
+            {
+                productSpecificationAttributeOption = new SpecificationAttributeOption()
+                {
+                    Name = attributeValue, 
+                    SpecificationAttributeId = productSpecification.Id
+                };
+                await _specificationAttributeService.InsertSpecificationAttributeOptionAsync(productSpecificationAttributeOption);
+            }
+
+            // Check for existing product attribute mapping or create it
+            var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecification.Id);
+            if (productSpecificationAttributeMapping == null)
+            {
+                productSpecificationAttributeMapping = new ProductSpecificationAttribute()
+                {
+                    ProductId = product.Id,
+                    SpecificationAttributeOptionId = productSpecificationAttributeOption.Id,
+                    ShowOnProductPage = true,
+                    AllowFiltering = true
+                };
+
+                await _specificationAttributeService.InsertProductSpecificationAttributeAsync(productSpecificationAttributeMapping);
+            }
 
             // Check for existing product attribute or create it
             var productAttribute = await _productAttributeService.GetProductAttributeByNameAsync(attributeName);
@@ -262,7 +332,102 @@ public partial class ProductCustomController : BaseAdminController
         }
     }
 
-    private async Task<int> GetCategoryIdAsync(string categoryPath)
+    private async Task<int> GetBrandIdAsync(string brandName)
+    {
+        await CreateNewBrandAsync(brandName);
+        var brand = await _manufacturerService.GetManufacturerByNameAsync(brandName);
+        return brand.Id;
+    }
+    private async Task CreateNewBrandAsync(string brandName)
+    {
+        var existingBrand = await _manufacturerService.GetManufacturerByNameAsync(brandName);
+
+        if (existingBrand != null)
+        {
+            return;
+        }
+
+        var newBrand = new Manufacturer()
+        {
+            Name = brandName,
+            CreatedOnUtc = DateTime.UtcNow,
+            //default values
+            PageSize = _catalogSettings.DefaultCategoryPageSize,
+            PageSizeOptions = _catalogSettings.DefaultCategoryPageSizeOptions,
+            Published = true,
+            AllowCustomersToSelectPageSize = true,
+        };
+
+        await _manufacturerService.InsertManufacturerAsync(newBrand);
+
+        //search engine name
+        var seName = await _urlRecordService.ValidateSeNameAsync(newBrand, null, newBrand.Name, true);
+        await _urlRecordService.SaveSlugAsync(newBrand, seName, 0);
+
+    }
+
+    public async Task UpdateProductBrandAsync(int productId, int brandId)
+    {
+        var product = await _productService.GetProductByIdAsync(productId);
+        if (product == null)
+            throw new ArgumentException("Product not found", nameof(productId));
+
+        var existingBrandMappings = await _manufacturerService.GetProductManufacturersByProductIdAsync(productId);
+
+        foreach (var existingMapping in existingBrandMappings)
+        {
+            if (existingMapping.ManufacturerId != brandId)
+            {
+                await _manufacturerService.DeleteProductManufacturerAsync(existingMapping);
+            }
+        }
+
+        if (existingBrandMappings.All(mapping => mapping.ManufacturerId != brandId))
+        {
+            var newMapping = new ProductManufacturer()
+            {
+                ProductId = productId,
+                ManufacturerId = brandId
+            };
+            await _manufacturerService.InsertProductManufacturerAsync(newMapping);
+        }
+    }
+
+    private async Task HandleProductTagsAsync(string productTags, Product product)
+    {
+        // Parse the category path and return IDs
+        var productTagNames = productTags.Split(",").Select(c => c.Trim()).ToList();
+
+        foreach (var productTagName in productTagNames)
+        {
+            await CreateNewProductTagAsync(productTagName);
+        }
+
+        await _productTagService.UpdateProductTagsAsync(product, productTagNames.ToArray());
+    }
+
+    private async Task CreateNewProductTagAsync(string productTagName)
+    {
+        var existingProductTag = await _productTagService.GetProductTagByNameAsync(productTagName);
+        if (existingProductTag != null)
+        {
+            return;
+        }
+
+        var newProductTag = new ProductTag()
+        {
+            Name = productTagName,
+        };
+
+        await _productTagService.InsertProductTagAsync(newProductTag);
+
+        //search engine name
+        var seName = await _urlRecordService.ValidateSeNameAsync(newProductTag, null, newProductTag.Name, true);
+        await _urlRecordService.SaveSlugAsync(newProductTag, seName, 0);
+
+    }
+
+    private async Task<int> GetCategoryIdAsync(string categoryPath, int imageId)
     {
         // Parse the category path and return IDs
         var categoryNames = categoryPath.Split(">>").Select(c => c.Trim()).ToList();
@@ -273,7 +438,7 @@ public partial class ProductCustomController : BaseAdminController
             var categoryName = categoryNames[i];
             if (i == 0)
             {
-                await CreateNewCategoryAsync(categoryName, 0, true);
+                await CreateNewCategoryAsync(categoryName, 0, true, imageId);
             }
             else
             {
@@ -284,7 +449,7 @@ public partial class ProductCustomController : BaseAdminController
                 {
                     parentCategoryId = parentCategory.Id;
                 }
-                await CreateNewCategoryAsync(categoryName, parentCategoryId, false);
+                await CreateNewCategoryAsync(categoryName, parentCategoryId, false, imageId);
             }
 
             if (i == categoryNames.Count - 1)
@@ -296,7 +461,7 @@ public partial class ProductCustomController : BaseAdminController
 
         return productCategoryId;
     }
-    private async Task CreateNewCategoryAsync(string categoryName, int parentCategoryId, bool showOnHomePage)
+    private async Task CreateNewCategoryAsync(string categoryName, int parentCategoryId, bool showOnHomePage, int imageId)
     {
         var existingCategory = await _categoryService.GetCategoryByNameAsync(categoryName);
         if (existingCategory != null)
@@ -316,6 +481,7 @@ public partial class ProductCustomController : BaseAdminController
             IncludeInTopMenu = false,
             AllowCustomersToSelectPageSize = true,
             ShowOnHomepage = showOnHomePage,
+            PictureId = imageId
         };
 
         await _categoryService.InsertCategoryAsync(newCategory);
@@ -352,7 +518,6 @@ public partial class ProductCustomController : BaseAdminController
             };
             await _categoryService.InsertProductCategoryAsync(newMapping);
         }
-        
     }
 
 
@@ -439,7 +604,7 @@ public partial class ProductCustomController : BaseAdminController
                 }
 
                 if (pictureAlreadyExists)
-                    continue; // Skip if the picture already exists
+                    return productPictureIds.ToList(); // Skip if the picture already exists
 
                 var newPicture = await _pictureService.InsertPictureAsync(newPictureBinary, mimeType, seoFileName);
 
