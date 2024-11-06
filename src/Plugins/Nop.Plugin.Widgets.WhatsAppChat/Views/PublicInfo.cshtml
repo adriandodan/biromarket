@@ -1,0 +1,19 @@
+﻿@model PublicInfoModel
+
+@{
+    var whatsAppHref = "https://web.whatsapp.com/send";
+    var phoneParameter = string.Concat("phone=", Model.WhatsAppNumber);
+    var textParameter = string.Concat("&text=", System.Web.HttpUtility.UrlEncode(Model.TextMessage));
+
+    var href = whatsAppHref + phoneParameter + textParameter;
+}
+
+<link rel="stylesheet" href="~/Plugins/Widgets.WhatsAppChat/Content/styles.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+<div class="whatsapp-chat">
+    <a href="@href"
+       target="_blank">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+</div>

@@ -1,0 +1,22 @@
+﻿.whatsapp-chat {
+  position: fixed;
+  z-index: 999;
+  top: auto;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  right: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+  .whatsapp-chat a {
+    border-radius: 50%;
+    padding: 1rem;
+    background-color: #43D167;
+  }
+
+  .whatsapp-chat i {
+    zoom: 220%;
+    color: white;
+  }
