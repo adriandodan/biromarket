@@ -77,9 +77,14 @@
                         @T("Admin.Common.Import")
                     </button>
 
-                    <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom">
+                    <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom-variants">
                         <i class="fas fa-upload"></i>
-                        Custom Import
+                        Custom Variants Import
+                    </button>
+
+                    <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom-samples">
+                        <i class="fas fa-upload"></i>
+                        Custom Samples Import
                     </button>
                 }
                 <button type="button" id="delete-selected" class="btn btn-danger">
@@ -421,14 +426,57 @@
     </div>
     
 @*import products form*@
-<div id="importexcel-window-custom" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-custom-title-title">
+<div id="importexcel-window-custom-variants" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-custom-title-variants">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="importexcel-window-custom-title">Custom Import</h4>
+                <h4 class="modal-title" id="importexcel-window-custom-title-variants">Custom Import</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             </div>
-            <form asp-controller="ProductCustom" asp-action="ImportExcelCustom" method="post" enctype="multipart/form-data">
+            <form asp-controller="ProductCustom" asp-action="ImportExcelCustomVariants" method="post" enctype="multipart/form-data">
+                <div class="form-horizontal">
+                    <div class="modal-body">
+                        <ul class="common-list">
+                            <li>
+                                <em>@T("Admin.Catalog.Products.List.ImportFromExcelTip")</em>
+                            </li>
+                            <li>
+                                <em>@T("Admin.Common.ImportFromExcel.ManyRecordsWarning")</em>
+                            </li>
+                        </ul>
+                        <div class="form-group row">
+                            <div class="col-md-2">
+                                <div class="label-wrapper">
+                                    <label class="col-form-label">
+                                        @T("Admin.Common.ExcelFile")
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-10">
+                                <input type="file" id="importexcelfilecustomvariants" name="importexcelfile" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">
+                            @T("Admin.Common.ImportFromExcel")
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@*import products form*@
+<div id="importexcel-window-custom-samples" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importexcel-window-custom-title-samples">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="importexcel-window-custom-title-samples">Custom Import</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <form asp-controller="ProductCustom" asp-action="ImportExcelCustomSamples" method="post" enctype="multipart/form-data">
                 <div class="form-horizontal">
                     <div class="modal-body">
                         <ul class="common-list">
@@ -463,7 +511,8 @@
     </div>
 </div>
 
-    @*export selected (XML). We don't use GET approach because it's limited to 2K-4K chars and won't work for large number of entities*@
+
+@*export selected (XML). We don't use GET approach because it's limited to 2K-4K chars and won't work for large number of entities*@
     <form asp-controller="Product" asp-action="ExportXmlSelected" method="post" id="export-xml-selected-form">
         <input type="hidden" id="selectedIds" name="selectedIds" value="" />
     </form>
