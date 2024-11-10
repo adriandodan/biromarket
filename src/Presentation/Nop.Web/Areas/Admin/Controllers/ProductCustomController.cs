@@ -80,7 +80,7 @@ public class ProductCustomController : BaseAdminController
     }
 
     [HttpPost]
-    public virtual async Task<IActionResult> ImportExcelCustomAsync(IFormFile importExcelFile)
+    public virtual async Task<IActionResult> ImportExcelCustomVariantsAsync(IFormFile importExcelFile)
     {
         if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
             return AccessDeniedView();
@@ -93,7 +93,7 @@ public class ProductCustomController : BaseAdminController
         {
             if (importExcelFile != null && importExcelFile.Length > 0)
             {
-                await ImportProductsFromXlsxCustomAsync(importExcelFile.OpenReadStream());
+                await ImportProductsFromXlsxCustomAsync(importExcelFile.OpenReadStream(), true);
             }
             else
             {
@@ -111,7 +111,39 @@ public class ProductCustomController : BaseAdminController
         }
     }
 
-    public virtual async Task ImportProductsFromXlsxCustomAsync(Stream stream)
+    [HttpPost]
+    public virtual async Task<IActionResult> ImportExcelCustomSamplesAsync(IFormFile importExcelFile)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
+            return AccessDeniedView();
+
+        if (await _workContext.GetCurrentVendorAsync() != null && !_vendorSettings.AllowVendorsToImportProducts)
+            // A vendor cannot import products
+            return AccessDeniedView();
+
+        try
+        {
+            if (importExcelFile != null && importExcelFile.Length > 0)
+            {
+                await ImportProductsFromXlsxCustomAsync(importExcelFile.OpenReadStream(), false);
+            }
+            else
+            {
+                _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Common.UploadFile"));
+                return RedirectToAction("List", "Product");
+            }
+
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Imported"));
+            return RedirectToAction("List", "Product");
+        }
+        catch (Exception exc)
+        {
+            await _notificationService.ErrorNotificationAsync(exc);
+            return RedirectToAction("List", "Product");
+        }
+    }
+
+    public virtual async Task ImportProductsFromXlsxCustomAsync(Stream stream, bool isVariantsImport)
     {
         using var workbook = new XLWorkbook(stream);
         var worksheet = workbook.Worksheet(1); // Get the first worksheet
@@ -179,150 +211,209 @@ public class ProductCustomController : BaseAdminController
             //search engine name
             await _urlRecordService.SaveSlugAsync(product, await _urlRecordService.ValidateSeNameAsync(product, null, product.Name, true), 0);
 
-            // Handle pictures for the product
-            var imagePathTemp = await DownloadFileAsync(pictures);
+            var productPictureId = 0;
 
-            var productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
-
-            
-            if (!string.IsNullOrEmpty(imagePathTemp))
+            if (isVariantsImport)
             {
-                if (!_fileProvider.FileExists(imagePathTemp))
-                    continue;
+                // Handle pictures for the product
+                var imagePathTemp = await DownloadFileAsync(pictures);
+                productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
 
-                try
+                if (!string.IsNullOrEmpty(imagePathTemp))
                 {
-                    _fileProvider.DeleteFile(imagePathTemp);
-                }
-                catch
-                {
-                    // ignored
+                    if (!_fileProvider.FileExists(imagePathTemp))
+                        continue;
+
+                    try
+                    {
+                        _fileProvider.DeleteFile(imagePathTemp);
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
                 }
             }
-            
-            // Handle brands
-            var brandId = await GetBrandIdAsync(brand);
-            await UpdateProductBrandAsync(product.Id, brandId);
+            else
+            {
+                var picturesUrls = pictures.Split(",").Select(c => c.Trim()).ToList();
+                foreach (var pictureUrl in picturesUrls)
+                {// Handle pictures for the product
+                    var imagePathTemp = await DownloadFileAsync(pictureUrl);
 
-            // Handle product tags
-            await HandleProductTagsAsync(productTags, product);
+                    if (productPictureId == 0)
+                    {
+                        productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
+                    }
+
+                    if (!string.IsNullOrEmpty(imagePathTemp))
+                    {
+                        if (!_fileProvider.FileExists(imagePathTemp))
+                            continue;
+
+                        try
+                        {
+                            _fileProvider.DeleteFile(imagePathTemp);
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(brand?.Trim()))
+            {
+                // Handle brands
+                var brandId = await GetBrandIdAsync(brand);
+                await UpdateProductBrandAsync(product.Id, brandId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(productTags?.Trim()))
+            {
+                // Handle product tags
+                await HandleProductTagsAsync(productTags, product);
+            }
 
             // Handle categories
             var categoryId = await GetCategoryIdAsync(category, productPictureId);
             await UpdateProductCategoriesAsync(product.Id, categoryId);
 
-            // Check for existing product attribute or create it
-            var productSpecification = await _specificationAttributeService.GetSpecificationAttributeByNameAsync(attributeName);
-            if (productSpecification == null)
+            if (isVariantsImport)
             {
-                productSpecification = new SpecificationAttribute() { Name = attributeName };
-                await _specificationAttributeService.InsertSpecificationAttributeAsync(productSpecification);
-            }
-
-            // Check for existing product attribute value or create it
-            var productSpecificationAttributeOption = await _specificationAttributeService.GetSpecificationAttributeOptionByNameAsync(attributeValue, productSpecification.Id);
-            if (productSpecificationAttributeOption == null)
-            {
-                productSpecificationAttributeOption = new SpecificationAttributeOption()
+                if (!string.IsNullOrWhiteSpace(attributeName))
                 {
-                    Name = attributeValue, 
-                    SpecificationAttributeId = productSpecification.Id
-                };
-                await _specificationAttributeService.InsertSpecificationAttributeOptionAsync(productSpecificationAttributeOption);
-            }
-
-            // Check for existing product attribute mapping or create it
-            var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecificationAttributeOption.Id);
-            if (productSpecificationAttributeMapping == null)
-            {
-                productSpecificationAttributeMapping = new ProductSpecificationAttribute()
-                {
-                    ProductId = product.Id,
-                    SpecificationAttributeOptionId = productSpecificationAttributeOption.Id,
-                    ShowOnProductPage = true,
-                    AllowFiltering = true
-                };
-
-                await _specificationAttributeService.InsertProductSpecificationAttributeAsync(productSpecificationAttributeMapping);
-            }
-
-            // Check for existing product attribute or create it
-            var productAttribute = await _productAttributeService.GetProductAttributeByNameAsync(attributeName);
-            if (productAttribute == null)
-            {
-                productAttribute = new ProductAttribute { Name = attributeName };
-                await _productAttributeService.InsertProductAttributeAsync(productAttribute);
-            }
-
-            // Check for existing product attribute mapping or create it
-            var productAttributeMapping = await _productAttributeService.GetProductAttributeMappingsByProductIdAndAttributeIdAsync(product.Id, productAttribute.Id);
-            if (productAttributeMapping == null)
-            {
-                productAttributeMapping = new ProductAttributeMapping
-                {
-                    ProductId = product.Id,
-                    ProductAttributeId = productAttribute.Id,
-                    IsRequired = true,
-                    AttributeControlTypeId = (int)AttributeControlType.DropdownList,
-                    TextPrompt = productAttribute.Name
-                };
-
-                await _productAttributeService.InsertProductAttributeMappingAsync(productAttributeMapping);
-            }
-
-            // Check for existing product attribute value or create it
-            var productAttributeValue = await _productAttributeService.GetProductAttributeValueByValueAndAttributeMappingIdAsync(attributeValue, productAttributeMapping.Id);
-            if (productAttributeValue == null)
-            {
-                productAttributeValue = new ProductAttributeValue { Name = attributeValue, ProductAttributeMappingId = productAttributeMapping.Id };
-                await _productAttributeService.InsertProductAttributeValueAsync(productAttributeValue);
-            }
-
-            // Create or update the attribute combination
-            var attributeCombination = await _productAttributeService.GetProductAttributeCombinationAsync(variantSku, product.Id, CreateAttributesXml(productAttributeMapping.Id, productAttributeValue.Id));
-            if (attributeCombination == null)
-            {
-                attributeCombination = new ProductAttributeCombination
-                {
-                    Sku = variantSku,
-                    ProductId = product.Id,
-                    AttributesXml = CreateAttributesXml(productAttributeMapping.Id, productAttributeValue.Id),
-                    OverriddenPrice = variantPrice,
-                    StockQuantity = variantStockQuantity
-                };
-                await _productAttributeService.InsertProductAttributeCombinationAsync(attributeCombination);
-            }
-            else
-            {
-                attributeCombination.OverriddenPrice = variantPrice;
-                attributeCombination.StockQuantity = variantStockQuantity;
-                await _productAttributeService.UpdateProductAttributeCombinationAsync(attributeCombination);
-            }
-
-            // Handle attribute combination images
-            if (productPictureId > 0)
-            {
-                var attributeCombinationPictures = await _productAttributeService.GetProductAttributeCombinationPicturesAsync(attributeCombination.Id);
-                var attributeCombinationPicture = attributeCombinationPictures.FirstOrDefault();
-                var pictureId = productPictureId;
-                {
-                    if (attributeCombinationPicture == null)
+                    // Check for existing product attribute or create it
+                    var productSpecification = await _specificationAttributeService.GetSpecificationAttributeByNameAsync(attributeName);
+                    if (productSpecification == null)
                     {
-                        var newAttributeCombinationPicture = new ProductAttributeCombinationPicture()
-                        {
-                            ProductAttributeCombinationId = attributeCombination.Id, PictureId = pictureId
-                        };
-                        await _productAttributeService.InsertProductAttributeCombinationPictureAsync(
-                            newAttributeCombinationPicture);
+                        productSpecification = new SpecificationAttribute() { Name = attributeName };
+                        await _specificationAttributeService.InsertSpecificationAttributeAsync(productSpecification);
                     }
-                    else
+
+                    if (!string.IsNullOrWhiteSpace(attributeValue))
                     {
-                        attributeCombinationPicture.PictureId = pictureId;
+                        // Check for existing product attribute value or create it
+                        var productSpecificationAttributeOption = await _specificationAttributeService.GetSpecificationAttributeOptionByNameAsync(attributeValue, productSpecification.Id);
+                        if (productSpecificationAttributeOption == null)
+                        {
+                            productSpecificationAttributeOption = new SpecificationAttributeOption()
+                            {
+                                Name = attributeValue,
+                                SpecificationAttributeId = productSpecification.Id
+                            };
+                            await _specificationAttributeService.InsertSpecificationAttributeOptionAsync(productSpecificationAttributeOption);
+                        }
+
+                        // Check for existing product attribute mapping or create it
+                        var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecificationAttributeOption.Id);
+                        if (productSpecificationAttributeMapping == null)
+                        {
+                            productSpecificationAttributeMapping = new ProductSpecificationAttribute()
+                            {
+                                ProductId = product.Id,
+                                SpecificationAttributeOptionId = productSpecificationAttributeOption.Id,
+                                ShowOnProductPage = true,
+                                AllowFiltering = true
+                            };
+
+                            await _specificationAttributeService.InsertProductSpecificationAttributeAsync(productSpecificationAttributeMapping);
+                        }
+                    }
+
+                    
+
+                }
+
+                if (!string.IsNullOrWhiteSpace(attributeName))
+                {
+                    // Check for existing product attribute or create it
+                    var productAttribute = await _productAttributeService.GetProductAttributeByNameAsync(attributeName);
+                    if (productAttribute == null)
+                    {
+                        productAttribute = new ProductAttribute { Name = attributeName };
+                        await _productAttributeService.InsertProductAttributeAsync(productAttribute);
+                    }
+
+                    // Check for existing product attribute mapping or create it
+                    var productAttributeMapping = await _productAttributeService.GetProductAttributeMappingsByProductIdAndAttributeIdAsync(product.Id, productAttribute.Id);
+                    if (productAttributeMapping == null)
+                    {
+                        productAttributeMapping = new ProductAttributeMapping
+                        {
+                            ProductId = product.Id,
+                            ProductAttributeId = productAttribute.Id,
+                            IsRequired = true,
+                            AttributeControlTypeId = (int)AttributeControlType.DropdownList,
+                            TextPrompt = productAttribute.Name
+                        };
+
+                        await _productAttributeService.InsertProductAttributeMappingAsync(productAttributeMapping);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(attributeValue))
+                    {
+                        // Check for existing product attribute value or create it
+                        var productAttributeValue = await _productAttributeService.GetProductAttributeValueByValueAndAttributeMappingIdAsync(attributeValue, productAttributeMapping.Id);
+                        if (productAttributeValue == null)
+                        {
+                            productAttributeValue = new ProductAttributeValue { Name = attributeValue, ProductAttributeMappingId = productAttributeMapping.Id };
+                            await _productAttributeService.InsertProductAttributeValueAsync(productAttributeValue);
+                        }
+
+                        // Create or update the attribute combination
+                        var attributeCombination = await _productAttributeService.GetProductAttributeCombinationAsync(variantSku, product.Id, CreateAttributesXml(productAttributeMapping.Id, productAttributeValue.Id));
+                        if (attributeCombination == null)
+                        {
+                            attributeCombination = new ProductAttributeCombination
+                            {
+                                Sku = variantSku,
+                                ProductId = product.Id,
+                                AttributesXml = CreateAttributesXml(productAttributeMapping.Id, productAttributeValue.Id),
+                                OverriddenPrice = variantPrice,
+                                StockQuantity = variantStockQuantity
+                            };
+                            await _productAttributeService.InsertProductAttributeCombinationAsync(attributeCombination);
+                        }
+                        else
+                        {
+                            attributeCombination.OverriddenPrice = variantPrice;
+                            attributeCombination.StockQuantity = variantStockQuantity;
+                            await _productAttributeService.UpdateProductAttributeCombinationAsync(attributeCombination);
+                        }
+
+                        // Handle attribute combination images
+                        if (productPictureId > 0)
+                        {
+                            var attributeCombinationPictures = await _productAttributeService.GetProductAttributeCombinationPicturesAsync(attributeCombination.Id);
+                            var attributeCombinationPicture = attributeCombinationPictures.FirstOrDefault();
+                            var pictureId = productPictureId;
+                            {
+                                if (attributeCombinationPicture == null)
+                                {
+                                    var newAttributeCombinationPicture = new ProductAttributeCombinationPicture()
+                                    {
+                                        ProductAttributeCombinationId = attributeCombination.Id,
+                                        PictureId = pictureId
+                                    };
+                                    await _productAttributeService.InsertProductAttributeCombinationPictureAsync(
+                                        newAttributeCombinationPicture);
+                                }
+                                else
+                                {
+                                    attributeCombinationPicture.PictureId = pictureId;
+                                }
+                            }
+
+                        }
                     }
                 }
-                
             }
+
         }
+
+        await CleanupDatabaseAsync();
     }
 
     private async Task<int> GetBrandIdAsync(string brandName)
@@ -641,6 +732,27 @@ public class ProductCustomController : BaseAdminController
         return $"""<Attributes><ProductAttribute ID="{productAttributeMappingId}"><ProductAttributeValue><Value>{productAttributeValue}</Value></ProductAttributeValue></ProductAttribute></Attributes>""";
     }
 
+    private async Task CleanupDatabaseAsync()
+    {
+        var specificationAttributes = await _specificationAttributeService.GetSpecificationAttributesAsync();
+
+        foreach (var specificationAttribute in specificationAttributes)
+        {
+            if (string.IsNullOrWhiteSpace(specificationAttribute.Name))
+            {
+                await _specificationAttributeService.DeleteSpecificationAttributeAsync(specificationAttribute);
+            }
+        }
+
+        var attributes = await _productAttributeService.GetAllProductAttributesAsync();
+        foreach (var attribute in attributes)
+        {
+            if (string.IsNullOrWhiteSpace(attribute.Name))
+            {
+                await _productAttributeService.DeleteProductAttributeAsync(attribute);
+            }
+        }
+    }
 
 }
 

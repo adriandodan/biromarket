@@ -1311,40 +1311,40 @@ public partial class ImportManager : IImportManager
             endRow++;
         }
 
-        //performance optimization, the check for the existence of the categories in one SQL request
-        var notExistingCategories = await _categoryService.GetNotExistingCategoriesAsync(allCategories.ToArray());
-        if (notExistingCategories.Any())
-        {
-            throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.CategoriesDontExist"), string.Join(", ", notExistingCategories)));
-        }
+        ////performance optimization, the check for the existence of the categories in one SQL request
+        //var notExistingCategories = await _categoryService.GetNotExistingCategoriesAsync(allCategories.ToArray());
+        //if (notExistingCategories.Any())
+        //{
+        //    throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.CategoriesDontExist"), string.Join(", ", notExistingCategories)));
+        //}
 
-        //performance optimization, the check for the existence of the manufacturers in one SQL request
-        var notExistingManufacturers = await _manufacturerService.GetNotExistingManufacturersAsync(allManufacturers.ToArray());
-        if (notExistingManufacturers.Any())
-        {
-            throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.ManufacturersDontExist"), string.Join(", ", notExistingManufacturers)));
-        }
+        ////performance optimization, the check for the existence of the manufacturers in one SQL request
+        //var notExistingManufacturers = await _manufacturerService.GetNotExistingManufacturersAsync(allManufacturers.ToArray());
+        //if (notExistingManufacturers.Any())
+        //{
+        //    throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.ManufacturersDontExist"), string.Join(", ", notExistingManufacturers)));
+        //}
 
-        //performance optimization, the check for the existence of the product attributes in one SQL request
-        var notExistingProductAttributes = await _productAttributeService.GetNotExistingAttributesAsync(allAttributeIds.ToArray());
-        if (notExistingProductAttributes.Any())
-        {
-            throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.ProductAttributesDontExist"), string.Join(", ", notExistingProductAttributes)));
-        }
+        ////performance optimization, the check for the existence of the product attributes in one SQL request
+        //var notExistingProductAttributes = await _productAttributeService.GetNotExistingAttributesAsync(allAttributeIds.ToArray());
+        //if (notExistingProductAttributes.Any())
+        //{
+        //    throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.ProductAttributesDontExist"), string.Join(", ", notExistingProductAttributes)));
+        //}
 
-        //performance optimization, the check for the existence of the specification attribute options in one SQL request
-        var notExistingSpecificationAttributeOptions = await _specificationAttributeService.GetNotExistingSpecificationAttributeOptionsAsync(allSpecificationAttributeOptionIds.Where(saoId => saoId != 0).ToArray());
-        if (notExistingSpecificationAttributeOptions.Any())
-        {
-            throw new ArgumentException($"The following specification attribute option ID(s) don't exist - {string.Join(", ", notExistingSpecificationAttributeOptions)}");
-        }
+        ////performance optimization, the check for the existence of the specification attribute options in one SQL request
+        //var notExistingSpecificationAttributeOptions = await _specificationAttributeService.GetNotExistingSpecificationAttributeOptionsAsync(allSpecificationAttributeOptionIds.Where(saoId => saoId != 0).ToArray());
+        //if (notExistingSpecificationAttributeOptions.Any())
+        //{
+        //    throw new ArgumentException($"The following specification attribute option ID(s) don't exist - {string.Join(", ", notExistingSpecificationAttributeOptions)}");
+        //}
 
-        //performance optimization, the check for the existence of the stores in one SQL request
-        var notExistingStores = await _storeService.GetNotExistingStoresAsync(allStores.ToArray());
-        if (notExistingStores.Any())
-        {
-            throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.StoresDontExist"), string.Join(", ", notExistingStores)));
-        }
+        ////performance optimization, the check for the existence of the stores in one SQL request
+        //var notExistingStores = await _storeService.GetNotExistingStoresAsync(allStores.ToArray());
+        //if (notExistingStores.Any())
+        //{
+        //    throw new ArgumentException(string.Format(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Import.StoresDontExist"), string.Join(", ", notExistingStores)));
+        //}
 
         return new ImportProductMetadata
         {
@@ -2445,7 +2445,9 @@ public partial class ImportManager : IImportManager
                     ? (await _storeMappingService.GetStoresIdsWithAccessAsync(product)).ToList()
                     : new List<int>();
 
-                var importedCategories = await categoryList.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                allCategories = CreateMissingCategories(allCategories, categoryList);
+
+                var importedCategories = await categoryList.Split(new[] { ";", ">>" }, StringSplitOptions.RemoveEmptyEntries)
                     .Select(categoryName => new CategoryKey(categoryName, storesIds))
                     .SelectAwait(async categoryKey =>
                     {
@@ -3322,6 +3324,11 @@ public partial class ImportManager : IImportManager
 
         //activity log
         await _customerActivityService.InsertActivityAsync("ImportOrders", string.Format(await _localizationService.GetResourceAsync("ActivityLog.ImportOrders"), metadata.CountOrdersInFile));
+    }
+
+    private Dictionary<CategoryKey, Category> CreateMissingCategories(Dictionary<CategoryKey, Category> allCategories, string importedCategoriesString)
+    {
+        return allCategories;
     }
 
     #endregion
