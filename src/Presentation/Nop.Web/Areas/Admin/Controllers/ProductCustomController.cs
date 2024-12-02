@@ -198,7 +198,8 @@ public class ProductCustomController : BaseAdminController
                     VisibleIndividually = true,
                     OrderMaximumQuantity = 10000,
                     OrderMinimumQuantity = 1,
-                    ProductType = ProductType.SimpleProduct
+                    ProductType = ProductType.SimpleProduct,
+                    IsShipEnabled = true
                 };
                 await _productService.InsertProductAsync(product);
             }
@@ -212,6 +213,7 @@ public class ProductCustomController : BaseAdminController
                 product.OrderMaximumQuantity = 10000;
                 product.OrderMinimumQuantity = 1;
                 product.ProductType = ProductType.SimpleProduct;
+                product.IsShipEnabled = true;
 
                 await _productService.UpdateProductAsync(product);
             }
