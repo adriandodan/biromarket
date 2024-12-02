@@ -195,7 +195,10 @@ public class ProductCustomController : BaseAdminController
                     FullDescription = fullDescription,
                     Price = price,
                     Published = true,
-                    VisibleIndividually = true
+                    VisibleIndividually = true,
+                    OrderMaximumQuantity = 10000,
+                    OrderMinimumQuantity = 1,
+                    ProductType = ProductType.SimpleProduct
                 };
                 await _productService.InsertProductAsync(product);
             }
@@ -205,6 +208,11 @@ public class ProductCustomController : BaseAdminController
                 product.ShortDescription = shortDescription;
                 product.FullDescription = fullDescription;
                 product.Price = price;
+                product.VisibleIndividually = true;
+                product.OrderMaximumQuantity = 10000;
+                product.OrderMinimumQuantity = 1;
+                product.ProductType = ProductType.SimpleProduct;
+
                 await _productService.UpdateProductAsync(product);
             }
 
