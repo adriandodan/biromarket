@@ -79,7 +79,7 @@ public class ProductCustomController : BaseAdminController
         _specificationAttributeService = specificationAttributeService;
     }
 
-    [HttpPost]
+    [HttpPost, ActionName("ImportExcelCustomVariants")]
     public virtual async Task<IActionResult> ImportExcelCustomVariantsAsync(IFormFile importExcelFile)
     {
         if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
@@ -111,7 +111,7 @@ public class ProductCustomController : BaseAdminController
         }
     }
 
-    [HttpPost]
+    [HttpPost, ActionName("ImportExcelCustomSamples")]
     public virtual async Task<IActionResult> ImportExcelCustomSamplesAsync(IFormFile importExcelFile)
     {
         if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts))
