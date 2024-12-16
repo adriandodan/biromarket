@@ -24,20 +24,22 @@
     }
 </style>
 
-@{
+@if (Model.QuantityInStock != null)
+{
     var stockClass = Model.QuantityInStock switch
     {
         <= 0 => "stock-red",
         > 0 and <= 5000 => "stock-yellow",
         > 5000 => "stock-green",
     };
-}
 
-<div class="availability">
-    <div class="stock">
-        <span class="stock-wrapper @stockClass" id="stock-availability-value-@Model.Id">
-            @Model.StockAvailability
-        </span>
+    <div class="availability">
+        <div class="stock">
+            <span class="stock-wrapper @stockClass" id="stock-availability-value-@Model.Id">
+                @Model.StockAvailability
+            </span>
+        </div>
+        @await Html.PartialAsync("_BackInStockSubscription", Model)
     </div>
-    @await Html.PartialAsync("_BackInStockSubscription", Model)
-</div>
+
+}
