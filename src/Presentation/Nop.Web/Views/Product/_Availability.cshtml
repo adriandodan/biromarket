@@ -1,14 +1,43 @@
 ﻿@model ProductDetailsModel
-@if (!string.IsNullOrWhiteSpace(Model.StockAvailability) || Model.DisplayBackInStockSubscription)
-{
-    <div class="availability">
-        @if (!string.IsNullOrWhiteSpace(Model.StockAvailability))
-        {
-            <div class="stock">
-                <span class="label">@T("Products.Availability"):</span>
-                <span class="value" id="stock-availability-value-@Model.Id">@Model.StockAvailability</span>
-            </div>
-        }
-        @await Html.PartialAsync("_BackInStockSubscription", Model)
-    </div>
+
+<style>
+    .stock-wrapper{
+        display: flex;
+        width: 30%;
+        justify-content: space-around;
+        color: white;
+        font-weight: bold;
+        padding: 10px;
+        padding-right: 10px;
+    }
+
+    .stock-red {
+        background-color: red;
+    }
+
+    .stock-yellow {
+        background-color: darkgoldenrod;
+    }
+
+    .stock-green {
+        background-color: green;
+    }
+</style>
+
+@{
+    var stockClass = Model.QuantityInStock switch
+    {
+        <= 0 => "stock-red",
+        > 0 and <= 5000 => "stock-yellow",
+        > 5000 => "stock-green",
+    };
 }
+
+<div class="availability">
+    <div class="stock">
+        <span class="stock-wrapper @stockClass" id="stock-availability-value-@Model.Id">
+            @Model.StockAvailability
+        </span>
+    </div>
+    @await Html.PartialAsync("_BackInStockSubscription", Model)
+</div>

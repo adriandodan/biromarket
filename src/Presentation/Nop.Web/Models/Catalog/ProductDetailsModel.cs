@@ -82,6 +82,7 @@ public partial record ProductDetailsModel : BaseNopEntityModel
     public ManageInventoryMethod ManageInventoryMethod { get; set; }
 
     public string StockAvailability { get; set; }
+    public int QuantityInStock { get; set; }
 
     public bool DisplayBackInStockSubscription { get; set; }
 
