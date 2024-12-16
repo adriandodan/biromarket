@@ -1502,6 +1502,7 @@ public partial class ProductModelFactory : IProductModelFactory
             Gtin = product.Gtin,
             ManageInventoryMethod = product.ManageInventoryMethod,
             StockAvailability = await _productService.FormatStockMessageAsync(product, string.Empty),
+            QuantityInStock = product.StockQuantity,
             HasSampleDownload = product.IsDownload && product.HasSampleDownload,
             DisplayDiscontinuedMessage = !product.Published && _catalogSettings.DisplayDiscontinuedMessageForUnpublishedProducts,
             AvailableEndDate = product.AvailableEndDateTimeUtc,

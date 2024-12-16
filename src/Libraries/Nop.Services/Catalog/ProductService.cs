@@ -258,13 +258,20 @@ public partial class ProductService : IProductService
                 }
                 else
                 {
-                    stockMessage = product.DisplayStockQuantity
-                        ?
-                        //display "in stock" with stock quantity
-                        string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
-                        :
-                        //display "in stock" without stock quantity
-                        await _localizationService.GetResourceAsync("Products.Availability.InStock");
+                    if (stockQuantity == 5000)
+                    {
+                        stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStockVendor");
+                    }
+                    else
+                    {
+                        stockMessage = product.DisplayStockQuantity
+                            ?
+                            //display "in stock" with stock quantity
+                            string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
+                            :
+                            //display "in stock" without stock quantity
+                            await _localizationService.GetResourceAsync("Products.Availability.InStock");
+                    }
                 }
             }
             else
@@ -357,13 +364,20 @@ public partial class ProductService : IProductService
             }
             else
             {
-                stockMessage = product.DisplayStockQuantity
-                    ?
-                    //display "in stock" with stock quantity
-                    string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
-                    :
-                    //display "in stock" without stock quantity
-                    await _localizationService.GetResourceAsync("Products.Availability.InStock");
+                if (stockQuantity == 5000)
+                {
+                    stockMessage = await _localizationService.GetResourceAsync("Products.Availability.InStockVendor");
+                }
+                else
+                {
+                    stockMessage = product.DisplayStockQuantity
+                        ?
+                        //display "in stock" with stock quantity
+                        string.Format(await _localizationService.GetResourceAsync("Products.Availability.InStockWithQuantity"), stockQuantity)
+                        :
+                        //display "in stock" without stock quantity
+                        await _localizationService.GetResourceAsync("Products.Availability.InStock");
+                }
             }
         }
         else
