@@ -539,7 +539,7 @@ public class ProductCustomController : BaseAdminController
             var categoryName = categoryNames[i];
             if (i == 0)
             {
-                await CreateNewCategoryAsync(categoryName, 0, true, imageId);
+                await CreateNewCategoryAsync(categoryName, 0, false, imageId);
             }
             else
             {
@@ -550,7 +550,7 @@ public class ProductCustomController : BaseAdminController
                 {
                     parentCategoryId = parentCategory.Id;
                 }
-                await CreateNewCategoryAsync(categoryName, parentCategoryId, false, imageId);
+                await CreateNewCategoryAsync(categoryName, parentCategoryId, i == 2, imageId);
             }
 
             if (i == categoryNames.Count - 1)
