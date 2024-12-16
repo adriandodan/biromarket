@@ -33,6 +33,8 @@ public partial record ProductOverviewModel : BaseNopEntityModel
     public ProductSpecificationModel ProductSpecificationModel { get; set; }
     //price
     public ProductReviewOverviewModel ReviewOverviewModel { get; set; }
+    public string StockAvailability { get; set; }
+    public int? QuantityInStock { get; set; }
 
     #region Nested Classes
 
