@@ -199,6 +199,7 @@ public partial class WebHelper : IWebHelper
 
         //ensure that URL is ended with slash
         storeLocation = $"{storeLocation.TrimEnd('/')}/";
+        storeLocation = storeLocation.Replace("http://", "https://");
 
         return storeLocation;
     }
