@@ -1,0 +1,11 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "WhatsApp Chat Widget",
+  "SystemName": "Widgets.WhatsAppChat",
+  "Version": "1.5",
+  "SupportedVersions": [ "4.70" ],
+  "Author": "Adrian Dodan",
+  "DisplayOrder": 1,
+  "Description": "A widget to add a WhatsApp chat button to your nopCommerce store.",
+  "FileName": "Nop.Plugin.Widgets.WhatsAppChat.dll"
+}
