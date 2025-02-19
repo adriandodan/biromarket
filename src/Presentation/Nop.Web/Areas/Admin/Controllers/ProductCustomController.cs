@@ -184,6 +184,11 @@ public class ProductCustomController : BaseAdminController
             decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantPrice);
             column++;
 
+            if (string.IsNullOrWhiteSpace(sku))
+            {
+                continue;
+            }
+
             // Load or create the product as before
             var product = await _productService.GetProductBySkuAsync(sku);
             if (product == null)
@@ -651,7 +656,7 @@ public class ProductCustomController : BaseAdminController
         }
         catch (Exception ex)
         {
-            await _logger.ErrorAsync("Download image failed", ex);
+            await _logger.ErrorAsync($"Download image failed {urlString}", ex);
         }
 
         return string.Empty;
