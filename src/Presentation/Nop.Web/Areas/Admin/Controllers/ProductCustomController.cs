@@ -183,6 +183,8 @@ public class ProductCustomController : BaseAdminController
             column++;
             decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantPrice);
             column++;
+            int.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantQuantity);
+            column++;
 
             if (string.IsNullOrWhiteSpace(sku))
             {
@@ -206,10 +208,10 @@ public class ProductCustomController : BaseAdminController
                     OrderMinimumQuantity = 1,
                     ProductType = ProductType.SimpleProduct,
                     IsShipEnabled = true,
-                    ManageInventoryMethod = ManageInventoryMethod.ManageStock,
-                    ManageInventoryMethodId = 1,
+                    ManageInventoryMethod = isVariantsImport ? ManageInventoryMethod.ManageStockByAttributes : ManageInventoryMethod.ManageStock,
+                    ManageInventoryMethodId = isVariantsImport ? 2 : 1,
                     DisplayStockAvailability = true,
-                    StockQuantity = stockQuantity
+                    StockQuantity = stockQuantity,
                 };
                 await _productService.InsertProductAsync(product);
             }
@@ -224,8 +226,10 @@ public class ProductCustomController : BaseAdminController
                 product.OrderMinimumQuantity = 1;
                 product.ProductType = ProductType.SimpleProduct;
                 product.IsShipEnabled = true;
-                product.ManageInventoryMethod = ManageInventoryMethod.ManageStock;
-                product.ManageInventoryMethodId = 1;
+                product.ManageInventoryMethod = isVariantsImport
+                    ? ManageInventoryMethod.ManageStockByAttributes
+                    : ManageInventoryMethod.ManageStock;
+                product.ManageInventoryMethodId = isVariantsImport ? 2 : 1;
                 product.DisplayStockAvailability = true;
                 product.StockQuantity = stockQuantity;
 
@@ -396,12 +400,14 @@ public class ProductCustomController : BaseAdminController
                                 ProductId = product.Id,
                                 AttributesXml = CreateAttributesXml(productAttributeMapping.Id, productAttributeValue.Id),
                                 OverriddenPrice = variantPrice,
+                                StockQuantity = variantQuantity
                             };
                             await _productAttributeService.InsertProductAttributeCombinationAsync(attributeCombination);
                         }
                         else
                         {
                             attributeCombination.OverriddenPrice = variantPrice;
+                            attributeCombination.StockQuantity = variantQuantity;
                             await _productAttributeService.UpdateProductAttributeCombinationAsync(attributeCombination);
                         }
 

@@ -223,6 +223,20 @@ public partial class ProductService : IProductService
         return (sku, manufacturerPartNumber, gtin);
     }
 
+    protected virtual async Task<int> GetStockQuantityForAttributesAsync(Product product, string attributesXml)
+    {
+        if (!product.DisplayStockAvailability)
+            return 0;
+
+        var stockQuantity = 0;
+
+        var combination = await _productAttributeParser.FindProductAttributeCombinationAsync(product, attributesXml);
+        //combination exists
+        stockQuantity = combination?.StockQuantity ?? product.StockQuantity;
+
+        return stockQuantity;
+    }
+
     /// <summary>
     /// Get stock message for a product with attributes
     /// </summary>
@@ -1640,6 +1654,25 @@ public partial class ProductService : IProductService
                 break;
             case ManageInventoryMethod.ManageStockByAttributes:
                 stockMessage = await GetStockMessageForAttributesAsync(product, attributesXml);
+                break;
+        }
+
+        return stockMessage;
+    }
+
+    public virtual async Task<int> GetStockQuantityAsync(Product product, string attributesXml)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        var stockMessage = 0;
+
+        switch (product.ManageInventoryMethod)
+        {
+            case ManageInventoryMethod.ManageStock:
+                stockMessage = product.StockQuantity;
+                break;
+            case ManageInventoryMethod.ManageStockByAttributes:
+                stockMessage = await GetStockQuantityForAttributesAsync(product, attributesXml);
                 break;
         }
 

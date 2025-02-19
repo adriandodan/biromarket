@@ -882,10 +882,7 @@ public partial class ShoppingCartService : IShoppingCartService
                 {
                     var productAttribute = await _productAttributeService.GetProductAttributeByIdAsync(a2.ProductAttributeId);
 
-                    var textPrompt = await _localizationService.GetLocalizedAsync(a2, x => x.TextPrompt);
-                    var notFoundWarning = !string.IsNullOrEmpty(textPrompt) ?
-                        textPrompt :
-                        string.Format(await _localizationService.GetResourceAsync("ShoppingCart.SelectAttribute"), await _localizationService.GetLocalizedAsync(productAttribute, a => a.Name));
+                    var notFoundWarning = string.Format(await _localizationService.GetResourceAsync("ShoppingCart.SelectAttribute"), await _localizationService.GetLocalizedAsync(productAttribute, a => a.Name));
 
                     warnings.Add(notFoundWarning);
                 }
