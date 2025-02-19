@@ -582,7 +582,8 @@ public class ProductCustomController : BaseAdminController
             IncludeInTopMenu = true,
             AllowCustomersToSelectPageSize = true,
             ShowOnHomepage = showOnHomePage,
-            PictureId = imageId
+            PictureId = imageId,
+            PriceRangeFiltering = true
         };
 
         await _categoryService.InsertCategoryAsync(newCategory);
