@@ -1,9 +1,9 @@
 ﻿@model PublicInfoModel
 
 @{
-    var whatsAppHref = "https://web.whatsapp.com/send";
-    var phoneParameter = string.Concat("phone=", Model.WhatsAppNumber);
-    var textParameter = string.Concat("&text=", System.Web.HttpUtility.UrlEncode(Model.TextMessage));
+    var whatsAppHref = "https://wa.me/";
+    var phoneParameter = @Model.WhatsAppNumber;
+    var textParameter = string.Concat("?text=", System.Web.HttpUtility.UrlEncode(Model.TextMessage));
 
     var href = whatsAppHref + phoneParameter + textParameter;
 }
