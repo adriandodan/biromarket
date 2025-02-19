@@ -847,6 +847,7 @@ public partial class ShoppingCartController : BasePublicController
 
         //stock
         var stockAvailability = await _productService.FormatStockMessageAsync(product, attributeXml);
+        var stockQuantity = await _productService.GetStockQuantityAsync(product, attributeXml);
 
         //conditional attributes
         var enabledAttributeMappingIds = new List<int>();
@@ -934,6 +935,7 @@ public partial class ShoppingCartController : BasePublicController
             price,
             basepricepangv,
             stockAvailability,
+            stockQuantity,
             enabledattributemappingids = enabledAttributeMappingIds.ToArray(),
             disabledattributemappingids = disabledAttributeMappingIds.ToArray(),
             pictureFullSizeUrl,
