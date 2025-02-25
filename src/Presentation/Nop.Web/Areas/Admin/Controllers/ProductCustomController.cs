@@ -174,17 +174,21 @@ public class ProductCustomController : BaseAdminController
             int.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var stockQuantity);
             column++;
 
-            // Handle attributes and combinations
-            var attributeName = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute name is in column 9
-            column++;
-            var attributeValue = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute value is in column 10
-            column++;
-            var variantSku = worksheet.Cell(row, column).GetString().Trim(); // Assuming variant SKU is in column 11
-            column++;
-            decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantPrice);
-            column++;
-            int.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantQuantity);
-            column++;
+            var attributeNames = new List<string>();
+            var attributeValues = new List<string>();
+
+            for (var index = 0; index < 20; index++)
+            {
+                var attributeName = worksheet.Cell(row, column).GetString().Trim();
+                if (!string.IsNullOrEmpty(attributeName))
+                {
+                    attributeNames.Add(attributeName);
+                    column++;
+                    var attributeValue = worksheet.Cell(row, column).GetString().Trim();
+                    attributeValues.Add(attributeValue);
+                    column++;
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(sku))
             {
@@ -310,57 +314,27 @@ public class ProductCustomController : BaseAdminController
 
             if (isVariantsImport)
             {
-                if (!string.IsNullOrWhiteSpace(attributeName))
+                // Handle attributes and combinations
+                var variantAttributeName = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute name is in column 9
+                column++;
+                var variantAttributeValue = worksheet.Cell(row, column).GetString().Trim(); // Assuming attribute value is in column 10
+                column++;
+                var variantSku = worksheet.Cell(row, column).GetString().Trim(); // Assuming variant SKU is in column 11
+                column++;
+                decimal.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantPrice);
+                column++;
+                int.TryParse(worksheet.Cell(row, column).GetString().Trim(), out var variantQuantity);
+                column++;
+
+                await AddProductSpecificationAttributesAsync(product.Id, variantAttributeName, variantAttributeValue);
+
+                if (!string.IsNullOrWhiteSpace(variantAttributeName))
                 {
                     // Check for existing product attribute or create it
-                    var productSpecification = await _specificationAttributeService.GetSpecificationAttributeByNameAsync(attributeName);
-                    if (productSpecification == null)
-                    {
-                        productSpecification = new SpecificationAttribute() { Name = attributeName };
-                        await _specificationAttributeService.InsertSpecificationAttributeAsync(productSpecification);
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(attributeValue))
-                    {
-                        // Check for existing product attribute value or create it
-                        var productSpecificationAttributeOption = await _specificationAttributeService.GetSpecificationAttributeOptionByNameAsync(attributeValue, productSpecification.Id);
-                        if (productSpecificationAttributeOption == null)
-                        {
-                            productSpecificationAttributeOption = new SpecificationAttributeOption()
-                            {
-                                Name = attributeValue,
-                                SpecificationAttributeId = productSpecification.Id
-                            };
-                            await _specificationAttributeService.InsertSpecificationAttributeOptionAsync(productSpecificationAttributeOption);
-                        }
-
-                        // Check for existing product attribute mapping or create it
-                        var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(product.Id, productSpecificationAttributeOption.Id);
-                        if (productSpecificationAttributeMapping == null)
-                        {
-                            productSpecificationAttributeMapping = new ProductSpecificationAttribute()
-                            {
-                                ProductId = product.Id,
-                                SpecificationAttributeOptionId = productSpecificationAttributeOption.Id,
-                                ShowOnProductPage = true,
-                                AllowFiltering = true
-                            };
-
-                            await _specificationAttributeService.InsertProductSpecificationAttributeAsync(productSpecificationAttributeMapping);
-                        }
-                    }
-
-                    
-
-                }
-
-                if (!string.IsNullOrWhiteSpace(attributeName))
-                {
-                    // Check for existing product attribute or create it
-                    var productAttribute = await _productAttributeService.GetProductAttributeByNameAsync(attributeName);
+                    var productAttribute = await _productAttributeService.GetProductAttributeByNameAsync(variantAttributeName);
                     if (productAttribute == null)
                     {
-                        productAttribute = new ProductAttribute { Name = attributeName };
+                        productAttribute = new ProductAttribute { Name = variantAttributeName };
                         await _productAttributeService.InsertProductAttributeAsync(productAttribute);
                     }
 
@@ -380,13 +354,13 @@ public class ProductCustomController : BaseAdminController
                         await _productAttributeService.InsertProductAttributeMappingAsync(productAttributeMapping);
                     }
 
-                    if (!string.IsNullOrWhiteSpace(attributeValue))
+                    if (!string.IsNullOrWhiteSpace(variantAttributeValue))
                     {
                         // Check for existing product attribute value or create it
-                        var productAttributeValue = await _productAttributeService.GetProductAttributeValueByValueAndAttributeMappingIdAsync(attributeValue, productAttributeMapping.Id);
+                        var productAttributeValue = await _productAttributeService.GetProductAttributeValueByValueAndAttributeMappingIdAsync(variantAttributeValue, productAttributeMapping.Id);
                         if (productAttributeValue == null)
                         {
-                            productAttributeValue = new ProductAttributeValue { Name = attributeValue, ProductAttributeMappingId = productAttributeMapping.Id };
+                            productAttributeValue = new ProductAttributeValue { Name = variantAttributeValue, ProductAttributeMappingId = productAttributeMapping.Id };
                             await _productAttributeService.InsertProductAttributeValueAsync(productAttributeValue);
                         }
 
@@ -438,10 +412,63 @@ public class ProductCustomController : BaseAdminController
                     }
                 }
             }
+            else
+            {
+                for (var i = 0; i < attributeNames.Count; i++)
+                {
+                    var attributeName = attributeNames[i];
+                    var attributeValue = attributeValues[i];
 
+                    await AddProductSpecificationAttributesAsync(product.Id, attributeName, attributeValue);
+                }
+            }
         }
 
         await CleanupDatabaseAsync();
+    }
+
+    private async Task AddProductSpecificationAttributesAsync(int productId, string attributeName, string attributeValue)
+    {
+        if (!string.IsNullOrWhiteSpace(attributeName))
+        {
+            // Check for existing product attribute or create it
+            var productSpecification = await _specificationAttributeService.GetSpecificationAttributeByNameAsync(attributeName);
+            if (productSpecification == null)
+            {
+                productSpecification = new SpecificationAttribute() { Name = attributeName };
+                await _specificationAttributeService.InsertSpecificationAttributeAsync(productSpecification);
+            }
+
+            if (!string.IsNullOrWhiteSpace(attributeName))
+            {
+                // Check for existing product attribute value or create it
+                var productSpecificationAttributeOption = await _specificationAttributeService.GetSpecificationAttributeOptionByNameAsync(attributeValue, productSpecification.Id);
+                if (productSpecificationAttributeOption == null)
+                {
+                    productSpecificationAttributeOption = new SpecificationAttributeOption()
+                    {
+                        Name = attributeValue,
+                        SpecificationAttributeId = productSpecification.Id
+                    };
+                    await _specificationAttributeService.InsertSpecificationAttributeOptionAsync(productSpecificationAttributeOption);
+                }
+
+                // Check for existing product attribute mapping or create it
+                var productSpecificationAttributeMapping = await _specificationAttributeService.GetProductSpecificationAttributeByProductIdAsync(productId, productSpecificationAttributeOption.Id);
+                if (productSpecificationAttributeMapping == null)
+                {
+                    productSpecificationAttributeMapping = new ProductSpecificationAttribute()
+                    {
+                        ProductId = productId,
+                        SpecificationAttributeOptionId = productSpecificationAttributeOption.Id,
+                        ShowOnProductPage = true,
+                        AllowFiltering = true
+                    };
+
+                    await _specificationAttributeService.InsertProductSpecificationAttributeAsync(productSpecificationAttributeMapping);
+                }
+            }
+        }
     }
 
     private async Task<int> GetBrandIdAsync(string brandName)
