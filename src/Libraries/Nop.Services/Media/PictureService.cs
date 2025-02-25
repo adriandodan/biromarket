@@ -173,9 +173,20 @@ public partial class PictureService : IPictureService
     /// </returns>
     protected virtual Task<string> GetImagesPathUrlAsync(string storeLocation = null)
     {
-        var pathBase = _httpContextAccessor.HttpContext.Request?.PathBase.Value ?? string.Empty;
-        var imagesPathUrl = _mediaSettings.UseAbsoluteImagePath ? storeLocation : $"{pathBase}/";
+        var imagesPathUrl = storeLocation;
         imagesPathUrl = string.IsNullOrEmpty(imagesPathUrl) ? _webHelper.GetStoreLocation() : imagesPathUrl;
+
+        if (!string.IsNullOrEmpty(imagesPathUrl))
+        {
+            if (!imagesPathUrl.Contains("localhost"))
+            {
+                if (!imagesPathUrl.Contains("biromarket"))
+                {
+                    imagesPathUrl = "https://shop.biromarket.ro/";
+                }
+            }
+        }
+        
         imagesPathUrl += "images/";
 
         return Task.FromResult(imagesPathUrl);
