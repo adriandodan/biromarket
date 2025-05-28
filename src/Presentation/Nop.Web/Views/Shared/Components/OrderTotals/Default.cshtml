@@ -75,7 +75,7 @@
                 </tr>
                 }
             }
-            @if (Model.DisplayTax)
+           @*  @if (Model.DisplayTax)
             {
                 <tr class="tax-value">
                     <td class="cart-total-left">
@@ -85,7 +85,7 @@
                         <span class="value-summary">@Model.Tax</span>
                     </td>
                 </tr>
-            }
+            } *@
             @if (!string.IsNullOrEmpty(Model.OrderTotalDiscount))
             {
                 <tr class="discount-total">

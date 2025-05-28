@@ -1381,7 +1381,9 @@ public partial class ProductModelFactory : IProductModelFactory
                 ProductType = product.ProductType,
                 MarkAsNew = product.MarkAsNew &&
                             (!product.MarkAsNewStartDateTimeUtc.HasValue || product.MarkAsNewStartDateTimeUtc.Value < DateTime.UtcNow) &&
-                            (!product.MarkAsNewEndDateTimeUtc.HasValue || product.MarkAsNewEndDateTimeUtc.Value > DateTime.UtcNow)
+                            (!product.MarkAsNewEndDateTimeUtc.HasValue || product.MarkAsNewEndDateTimeUtc.Value > DateTime.UtcNow),
+                StockAvailability = await _productService.FormatStockMessageAsync(product, string.Empty),
+                QuantityInStock = product.StockQuantity,
             };
 
             //price
@@ -1502,6 +1504,7 @@ public partial class ProductModelFactory : IProductModelFactory
             Gtin = product.Gtin,
             ManageInventoryMethod = product.ManageInventoryMethod,
             StockAvailability = await _productService.FormatStockMessageAsync(product, string.Empty),
+            QuantityInStock = product.StockQuantity,
             HasSampleDownload = product.IsDownload && product.HasSampleDownload,
             DisplayDiscontinuedMessage = !product.Published && _catalogSettings.DisplayDiscontinuedMessageForUnpublishedProducts,
             AvailableEndDate = product.AvailableEndDateTimeUtc,

@@ -474,6 +474,17 @@
                         if (data.stockAvailability) {
                             $('#stock-availability-value-@Model.Id').text(data.stockAvailability);
                         }
+                        
+                        if (data.stockQuantity === 0){
+                            $('#stock-availability-value-@Model.Id').css("background-color", "red");
+                        }
+                        if (data.stockQuantity === 5000){
+                            $('#stock-availability-value-@Model.Id').css("background-color", "darkgoldenrod");
+                        }
+                        if (data.stockQuantity === 10000){
+                            $('#stock-availability-value-@Model.Id').css("background-color", "green");
+                        }
+
                         if (data.enabledattributemappingids) {
                             for (var i = 0; i < data.enabledattributemappingids.length; i++) {
                                 $('#@(NopCatalogDefaults.ProductAttributePrefix)label_' + data.enabledattributemappingids[i]).show();

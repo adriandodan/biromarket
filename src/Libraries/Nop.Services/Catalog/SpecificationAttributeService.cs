@@ -211,6 +211,12 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
         return await _specificationAttributeRepository.GetByIdAsync(specificationAttributeId, cache => default);
     }
 
+    public virtual async Task<SpecificationAttribute> GetSpecificationAttributeByNameAsync(string specificationAttributeName)
+    {
+        var allSpecificationAttributes = await GetSpecificationAttributesAsync();
+        return allSpecificationAttributes.FirstOrDefault(specAttr => specAttr.Name == specificationAttributeName);
+    }
+
     /// <summary>
     /// Gets specification attributes
     /// </summary>
@@ -336,6 +342,17 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
     public virtual async Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByIdAsync(int specificationAttributeOptionId)
     {
         return await _specificationAttributeOptionRepository.GetByIdAsync(specificationAttributeOptionId, cache => default);
+    }
+
+    public virtual async Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByNameAsync(string specificationAttributeOptionName, int specificationAttributeId)
+    {
+        var queryResult = await _specificationAttributeOptionRepository.GetAllAsync(
+            query => query.Where(attribute =>
+                attribute.Name == specificationAttributeOptionName &&
+                attribute.SpecificationAttributeId == specificationAttributeId),
+            _ => default);
+
+        return queryResult.ToList().FirstOrDefault();
     }
 
     /// <summary>
@@ -624,6 +641,14 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
             query = query.Where(psa => psa.SpecificationAttributeOptionId == specificationAttributeOptionId);
 
         return await query.CountAsync();
+    }
+
+    public virtual async Task<ProductSpecificationAttribute> GetProductSpecificationAttributeByProductIdAsync(int productId, int specificationAttributeOptionId)
+    {
+        var query = _productSpecificationAttributeRepository.Table
+            .Where(psa => psa.ProductId == productId)
+            .Where(psa => psa.SpecificationAttributeOptionId == specificationAttributeOptionId).ToList();
+        return query.FirstOrDefault();
     }
 
     /// <summary>

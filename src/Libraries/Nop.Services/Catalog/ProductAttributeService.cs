@@ -1,4 +1,5 @@
-﻿using Nop.Core;
+﻿using DocumentFormat.OpenXml.InkML;
+using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Media;
@@ -118,6 +119,15 @@ public partial class ProductAttributeService : IProductAttributeService
         return await _productAttributeRepository.GetByIdAsync(productAttributeId, cache => default);
     }
 
+    public virtual async Task<ProductAttribute> GetProductAttributeByNameAsync(string attributeName)
+    {
+        if (string.IsNullOrEmpty(attributeName))
+            return null;
+
+        // Query to find the product attribute by name
+        return await _productAttributeRepository.Table.FirstOrDefaultAsync(pa => pa.Name == attributeName);
+    }
+
     /// <summary>
     /// Gets product attributes 
     /// </summary>
@@ -208,6 +218,17 @@ public partial class ProductAttributeService : IProductAttributeService
         return attributes;
     }
 
+    public virtual async Task<ProductAttributeMapping> GetProductAttributeMappingsByProductIdAndAttributeIdAsync(int productId, int attributeId)
+    {
+        var query = from pam in _productAttributeMappingRepository.Table
+            orderby pam.DisplayOrder, pam.Id
+            where pam.ProductId == productId && pam.ProductAttributeId == attributeId
+                    select pam;
+
+        var attributeMapping = await query.FirstOrDefaultAsync();
+        return attributeMapping;
+    }
+
     /// <summary>
     /// Gets a product attribute mapping
     /// </summary>
@@ -288,6 +309,19 @@ public partial class ProductAttributeService : IProductAttributeService
     {
         return await _productAttributeValueRepository.GetByIdAsync(productAttributeValueId, cache => default);
     }
+
+    public virtual async Task<ProductAttributeValue> GetProductAttributeValueByValueAndAttributeMappingIdAsync(string valueName, int attributeMappingId)
+    {
+        var query = from pam in _productAttributeValueRepository.Table
+            orderby pam.DisplayOrder, pam.Id
+            where pam.ProductAttributeMappingId == attributeMappingId && pam.Name == valueName
+                    select pam;
+
+        var attributeValue = await query.FirstOrDefaultAsync();
+        return attributeValue;
+    }
+
+
 
     /// <summary>
     /// Inserts a product attribute value
@@ -503,6 +537,18 @@ public partial class ProductAttributeService : IProductAttributeService
     {
         return await _productAttributeCombinationRepository.GetByIdAsync(productAttributeCombinationId, cache => default);
     }
+
+    public virtual async Task<ProductAttributeCombination> GetProductAttributeCombinationAsync(string variantSku, int productId, string attributesXml)
+    {
+        var query = from pam in _productAttributeCombinationRepository.Table
+            orderby pam.Sku
+            where pam.Sku == variantSku && pam.ProductId == productId && pam.AttributesXml == attributesXml
+                    select pam;
+
+        var attributeCombination = await query.FirstOrDefaultAsync();
+        return attributeCombination;
+    }
+
 
     /// <summary>
     /// Gets a product attribute combination by SKU

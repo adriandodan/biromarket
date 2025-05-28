@@ -449,6 +449,12 @@ public partial class CategoryService : ICategoryService
         return await _categoryRepository.GetByIdAsync(categoryId, cache => default);
     }
 
+    public virtual async Task<Category> GetCategoryByNameAsync(string categoryName)
+    {
+        var allCategories = await GetAllCategoriesAsync();
+        return allCategories.FirstOrDefault(category => category.Name == categoryName);
+    }
+
     /// <summary>
     /// Get categories for which a discount is applied
     /// </summary>

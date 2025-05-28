@@ -344,6 +344,7 @@ public partial interface IProductService
     /// The task result contains the stock message
     /// </returns>
     Task<string> FormatStockMessageAsync(Product product, string attributesXml);
+    Task<int> GetStockQuantityAsync(Product product, string attributesXml);
 
     /// <summary>
     /// Formats SKU
