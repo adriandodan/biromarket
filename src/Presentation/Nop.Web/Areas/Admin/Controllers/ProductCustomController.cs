@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using ClosedXML.Excel;
+using Irony.Parsing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Data.SqlClient;
@@ -532,6 +533,28 @@ public class ProductCustomController : BaseAdminController
                     var attributeValue = attributeValues[i];
 
                     await AddProductSpecificationAttributesAsync(product.Id, attributeName, attributeValue);
+                }
+
+                var existingAttributes = await _specificationAttributeService.GetProductSpecificationAttributesAsync(product.Id);
+
+                // Build a set of tuples (attributeName, attributeValue) for quick lookup
+                var newAttributesSet = new HashSet<(string name, string value)>();
+                for (var i = 0; i < attributeNames.Count; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(attributeNames[i]) && !string.IsNullOrWhiteSpace(attributeValues[i]))
+                        newAttributesSet.Add((attributeNames[i].Trim(), attributeValues[i].Trim()));
+                }
+
+                // Remove existing mappings that are not in the new list
+                foreach (var existingMapping in existingAttributes)
+                {
+                    var specAttrOption = await _specificationAttributeService.GetSpecificationAttributeOptionByIdAsync(existingMapping.SpecificationAttributeOptionId);
+                    var specAttr = await _specificationAttributeService.GetSpecificationAttributeByIdAsync(specAttrOption.SpecificationAttributeId);
+
+                    if (!newAttributesSet.Contains((specAttr.Name.Trim(), specAttrOption.Name.Trim())))
+                    {
+                        await _specificationAttributeService.DeleteProductSpecificationAttributeAsync(existingMapping);
+                    }
                 }
             }
         }
