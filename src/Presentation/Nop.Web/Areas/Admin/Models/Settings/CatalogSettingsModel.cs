@@ -409,5 +409,9 @@ public partial record CatalogSettingsModel : BaseNopModel, ISettingsModel
     public bool ProductUrlStructureTypeId_OverrideForStore { get; set; }
     public SelectList ProductUrlStructureTypes { get; set; }
 
+    [NopResourceDisplayName("Admin.Configuration.Settings.Catalog.CustomHideAdminProductsButtons")]
+    public bool CustomHideAdminProductsButtons { get; set; }
+    public bool CustomHideAdminProductsButtons_OverrideForStore { get; set; }
+
     #endregion
 }

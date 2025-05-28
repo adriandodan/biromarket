@@ -180,10 +180,7 @@ public partial class PictureService : IPictureService
         {
             if (!imagesPathUrl.Contains("localhost"))
             {
-                if (!imagesPathUrl.Contains("biromarket"))
-                {
-                    imagesPathUrl = "https://shop.biromarket.ro/";
-                }
+                imagesPathUrl = "https://shop.biromarket.ro/";
             }
         }
         

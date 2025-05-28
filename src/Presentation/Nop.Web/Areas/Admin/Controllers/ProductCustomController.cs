@@ -1,21 +1,25 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Nop.Core.Domain.Vendors;
+﻿using System.Data;
+using ClosedXML.Excel;
+using Irony.Parsing;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Data.SqlClient;
+using MySqlConnector;
 using Nop.Core;
+using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Media;
+using Nop.Core.Domain.Vendors;
+using Nop.Core.Http;
+using Nop.Core.Infrastructure;
+using Nop.Data;
 using Nop.Services.Catalog;
 using Nop.Services.ExportImport;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Messages;
 using Nop.Services.Security;
-using Nop.Core.Domain.Catalog;
-using Nop.Core.Http;
-using Nop.Core.Infrastructure;
-using ILogger = Nop.Services.Logging.ILogger;
-using Nop.Core.Domain.Media;
-using Nop.Data;
-using Microsoft.AspNetCore.StaticFiles;
-using ClosedXML.Excel;
 using Nop.Services.Seo;
+using ILogger = Nop.Services.Logging.ILogger;
 
 namespace Nop.Web.Areas.Admin.Controllers;
 
@@ -40,7 +44,7 @@ public class ProductCustomController : BaseAdminController
     private readonly IProductTagService _productTagService;
     private readonly ISpecificationAttributeService _specificationAttributeService;
 
-
+    private readonly string _connectionString;
     public ProductCustomController(
         IProductService productService,
         IPictureService pictureService,
@@ -77,6 +81,115 @@ public class ProductCustomController : BaseAdminController
         _manufacturerService = manufacturerService;
         _productTagService = productTagService;
         _specificationAttributeService = specificationAttributeService;
+        _connectionString = DataSettingsManager.LoadSettings().ConnectionString;
+    }
+
+    [HttpPost, ActionName("ExportProductsCustom")]
+    public IActionResult ExportProductsCustomAsync()
+    {
+        var dataTable = new DataTable();
+        var isMySql = _dataProvider.GetType().Name.Contains("MySql");
+
+        if (isMySql)
+        {
+            using (var conn = new MySqlConnection(_connectionString))
+            using (var cmd = new MySqlCommand("custom_ExportAllProducts", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    dataTable.Load(reader);
+                }
+            }
+        }
+        else
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            using (var cmd = new SqlCommand("custom_ExportAllProducts", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                conn.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    dataTable.Load(reader);
+                }
+            }
+        }
+
+        using (var workbook = new XLWorkbook())
+        {
+            var worksheet = workbook.Worksheets.Add("Products");
+
+            // Write headers
+            for (int col = 0; col < dataTable.Columns.Count; col++)
+            {
+                worksheet.Cell(1, col + 1).Value = dataTable.Columns[col].ColumnName;
+            }
+
+            // Bold header row
+            worksheet.Range(1, 1, 1, dataTable.Columns.Count).Style.Font.SetBold();
+
+            // Write data with formatting
+            for (int row = 0; row < dataTable.Rows.Count; row++)
+            {
+                for (int col = 0; col < dataTable.Columns.Count; col++)
+                {
+                    var cell = worksheet.Cell(row + 2, col + 1);
+                    var value = dataTable.Rows[row][col];
+                    var columnName = dataTable.Columns[col].ColumnName;
+
+                    if (value is DBNull)
+                    {
+                        cell.Value = Convert.ToString(value);
+                        continue;
+                    }
+
+                    if (columnName.Equals("Price", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (decimal.TryParse(value.ToString(), out var price))
+                        {
+                            cell.Value = price;
+                            cell.Style.NumberFormat.Format = "#,##0.00";
+                        }
+                        else
+                        {
+                            cell.Value = value.ToString();
+                        }
+                    }
+                    else if (columnName.Equals("Stoc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (int.TryParse(value.ToString(), out var stock))
+                        {
+                            cell.Value = stock;
+                            cell.Style.NumberFormat.Format = "0";
+                        }
+                        else
+                        {
+                            cell.Value = value.ToString();
+                        }
+                    }
+                    else
+                    {
+                        cell.Value = Convert.ToString(value);
+                    }
+                }
+            }
+
+            using (var stream = new MemoryStream())
+            {
+                workbook.SaveAs(stream);
+                stream.Position = 0;
+                var timestamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+                var filename = $"ProductsExport_{timestamp}.xlsx";
+
+                return File(stream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    filename);
+            }
+        }
     }
 
     [HttpPost, ActionName("ImportExcelCustomVariants")]
@@ -420,6 +533,28 @@ public class ProductCustomController : BaseAdminController
                     var attributeValue = attributeValues[i];
 
                     await AddProductSpecificationAttributesAsync(product.Id, attributeName, attributeValue);
+                }
+
+                var existingAttributes = await _specificationAttributeService.GetProductSpecificationAttributesAsync(product.Id);
+
+                // Build a set of tuples (attributeName, attributeValue) for quick lookup
+                var newAttributesSet = new HashSet<(string name, string value)>();
+                for (var i = 0; i < attributeNames.Count; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(attributeNames[i]) && !string.IsNullOrWhiteSpace(attributeValues[i]))
+                        newAttributesSet.Add((attributeNames[i].Trim(), attributeValues[i].Trim()));
+                }
+
+                // Remove existing mappings that are not in the new list
+                foreach (var existingMapping in existingAttributes)
+                {
+                    var specAttrOption = await _specificationAttributeService.GetSpecificationAttributeOptionByIdAsync(existingMapping.SpecificationAttributeOptionId);
+                    var specAttr = await _specificationAttributeService.GetSpecificationAttributeByIdAsync(specAttrOption.SpecificationAttributeId);
+
+                    if (!newAttributesSet.Contains((specAttr.Name.Trim(), specAttrOption.Name.Trim())))
+                    {
+                        await _specificationAttributeService.DeleteProductSpecificationAttributeAsync(existingMapping);
+                    }
                 }
             }
         }

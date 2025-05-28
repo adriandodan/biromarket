@@ -15,6 +15,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Migrations\CustomSqlScripts\CreateSpExportProducts_SQLServer.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Migrations\CustomSqlScripts\CreateSpExportProducts_MySQL.mysql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Migrations\CustomSqlScripts\CreateSpExportProducts_SQLServer.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentMigrator" Version="5.2.0" />
     <PackageReference Include="FluentMigrator.Runner" Version="5.1.0" />
     <PackageReference Include="linq2db" Version="5.4.1" />

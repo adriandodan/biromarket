@@ -7,6 +7,7 @@
     ViewBag.PageTitle = T("Admin.Catalog.Products").Text;
     //active menu item (system name)
     NopHtml.SetActiveMenuItemSystemName("Products");
+    var customHideAdminProductsButtons = ViewData["CustomHideAdminProductsButtons"] as bool? ?? false;
 }
 
 @{
@@ -40,51 +41,66 @@
                         <span class="sr-only">&nbsp;</span>
                     </button>
                     <ul class="dropdown-menu" role="menu">
-                        <li class="dropdown-item">
-                            
+                        @if (!customHideAdminProductsButtons)
+                        {
+                            <li class="dropdown-item">
+
                                 <button asp-action="ExportToXml" type="submit" name="exportxml-all">
                                     <i class="far fa-file-code"></i>
                                     @T("Admin.Common.ExportToXml.All")
-                                </button>                            
-                        </li>
-                        <li class="dropdown-item">
-                           
+                                </button>
+                            </li>
+                            <li class="dropdown-item">
+
                                 <button type="button" id="exportxml-selected">
                                     <i class="far fa-file-code"></i>
                                     @T("Admin.Common.ExportToXml.Selected")
-                                </button>                            
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li class="dropdown-item">                            
+                                </button>
+                            </li>
+                            <li class="dropdown-divider"></li>
+                            <li class="dropdown-item">
                                 <button asp-action="ExportToExcel" type="submit" name="exportexcel-all">
                                     <i class="far fa-file-excel"></i>
                                     @T("Admin.Common.ExportToExcel.All")
-                                </button>                            
-                        </li>
-                        <li class="dropdown-item">                            
+                                </button>
+                            </li>
+                            <li class="dropdown-item">
                                 <button type="button" id="exportexcel-selected">
                                     <i class="far fa-file-excel"></i>
                                     @T("Admin.Common.ExportToExcel.Selected")
-                                </button>                            
+                                </button>
+                            </li>
+                        }
+                        <li class="dropdown-item">
+                            <button
+                                type="submit"
+                                formmethod="post"
+                                formaction="@Url.Action("ExportProductsCustom", "ProductCustom")">
+                                <i class="far fa-file-excel"></i>
+                                Export To Excel (Custom)
+                            </button>
                         </li>
                     </ul>
                 </div>
                 @if (!Model.IsLoggedInAsVendor || Model.AllowVendorsToImportProducts)
                 {
-                    //a vendor cannot import products
-                    <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window">
-                        <i class="fas fa-upload"></i>
-                        @T("Admin.Common.Import")
-                    </button>
+                    if (!customHideAdminProductsButtons)
+                    {
+                        <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window">
+                            <i class="fas fa-upload"></i>
+                            @T("Admin.Common.Import")
+                        </button>
 
-                    <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom-variants">
-                        <i class="fas fa-upload"></i>
-                        Custom Variants Import
-                    </button>
+                        <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom-variants">
+                            <i class="fas fa-upload"></i>
+                            Custom Variants Import
+                        </button>
+                    }
+                    //a vendor cannot import products
 
                     <button type="button" name="importexcel" class="btn bg-olive" data-toggle="modal" data-target="#importexcel-window-custom-samples">
                         <i class="fas fa-upload"></i>
-                        Custom Samples Import
+                        Import
                     </button>
                 }
                 <button type="button" id="delete-selected" class="btn btn-danger">

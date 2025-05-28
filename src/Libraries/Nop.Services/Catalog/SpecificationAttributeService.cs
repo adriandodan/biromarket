@@ -341,7 +341,7 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
     /// </returns>
     public virtual async Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByIdAsync(int specificationAttributeOptionId)
     {
-        return await _specificationAttributeOptionRepository.GetByIdAsync(specificationAttributeOptionId, cache => default);
+        return await _specificationAttributeOptionRepository.GetByIdAsync(specificationAttributeOptionId);
     }
 
     public virtual async Task<SpecificationAttributeOption> GetSpecificationAttributeOptionByNameAsync(string specificationAttributeOptionName, int specificationAttributeId)
@@ -349,10 +349,9 @@ public partial class SpecificationAttributeService : ISpecificationAttributeServ
         var queryResult = await _specificationAttributeOptionRepository.GetAllAsync(
             query => query.Where(attribute =>
                 attribute.Name == specificationAttributeOptionName &&
-                attribute.SpecificationAttributeId == specificationAttributeId),
-            _ => default);
+                attribute.SpecificationAttributeId == specificationAttributeId));
 
-        return queryResult.ToList().FirstOrDefault();
+        return queryResult.FirstOrDefault();
     }
 
     /// <summary>
