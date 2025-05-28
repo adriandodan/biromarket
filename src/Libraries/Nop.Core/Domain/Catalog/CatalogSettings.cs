@@ -589,4 +589,6 @@ public partial class CatalogSettings : ISettings
     /// Gets or sets a value indicating whether standard search will be used when the search provider throws an exception
     /// </summary>
     public bool UseStandardSearchWhenSearchProviderThrowsException { get; set; }
+
+    public bool CustomHideAdminProductsButtons { get; set; }
 }

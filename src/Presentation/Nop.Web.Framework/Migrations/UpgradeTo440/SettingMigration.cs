@@ -103,6 +103,12 @@ public class SettingMigration : MigrationBase
             settingService.SaveSetting(catalogSettings, settings => settings.EnableManufacturerFiltering);
         }
 
+        if (!settingService.SettingExists(catalogSettings, settings => settings.CustomHideAdminProductsButtons))
+        {
+            catalogSettings.CustomHideAdminProductsButtons = true;
+            settingService.SaveSetting(catalogSettings, settings => settings.CustomHideAdminProductsButtons);
+        }
+
         if (!settingService.SettingExists(catalogSettings, settings => settings.EnablePriceRangeFiltering))
         {
             catalogSettings.EnablePriceRangeFiltering = true;

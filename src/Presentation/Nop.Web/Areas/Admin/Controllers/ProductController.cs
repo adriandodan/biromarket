@@ -803,6 +803,8 @@ public partial class ProductController : BaseAdminController
 
         //prepare model
         var model = await _productModelFactory.PrepareProductSearchModelAsync(new ProductSearchModel());
+        var catalogSettings = _settingService.LoadSetting<CatalogSettings>();
+        ViewData["CustomHideAdminProductsButtons"] = catalogSettings.CustomHideAdminProductsButtons;
 
         return View(model);
     }
