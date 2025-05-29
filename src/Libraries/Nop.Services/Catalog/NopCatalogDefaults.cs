@@ -14,6 +14,7 @@ public static partial class NopCatalogDefaults
     /// Gets a default price range 'from'
     /// </summary>
     public static decimal DefaultPriceRangeFrom => 0;
+    public static int DefaultNumberProductsToExport => 100000;
 
     /// <summary>
     /// Gets a default price range 'to'

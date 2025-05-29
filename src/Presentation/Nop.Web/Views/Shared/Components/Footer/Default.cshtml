@@ -114,6 +114,11 @@
             </div>
             @await Component.InvokeAsync(typeof(NewsletterBoxViewComponent))
         </div>
+        <div class="footer-images">
+            <img src="~/images/uploaded/anpc-sal.svg" alt="ANPC Soluționare" />
+            <img src="~/images/uploaded/anpc-sol.svg" alt="Soluționare online" />
+        </div>
+        
     </div>
     <div class="footer-lower">
         <div class="footer-info">
@@ -168,3 +173,29 @@
         });
     });
 </script>
+<style>
+    .footer-upper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px; /* spacing between footer blocks */
+    }
+
+    .footer-block.information {
+        flex: 1 1 200px; /* take available space with minimum width */
+        min-width: 200px;
+    }
+
+    .footer-images {
+        flex: 1 1 100%;
+        margin-top: 15px;
+        display: flex;
+        justify-content: flex-start; /* align left or center as you prefer */
+        gap: 10px;
+    }
+
+    .footer-images img {
+        max-height: 70px;
+        margin: 5px;
+    }
+
+</style>

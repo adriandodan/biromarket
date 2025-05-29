@@ -591,4 +591,5 @@ public partial class CatalogSettings : ISettings
     public bool UseStandardSearchWhenSearchProviderThrowsException { get; set; }
 
     public bool CustomHideAdminProductsButtons { get; set; }
+    public int CustomNumberOfProductsToExport { get; set; }
 }

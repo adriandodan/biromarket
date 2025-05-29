@@ -413,5 +413,9 @@ public partial record CatalogSettingsModel : BaseNopModel, ISettingsModel
     public bool CustomHideAdminProductsButtons { get; set; }
     public bool CustomHideAdminProductsButtons_OverrideForStore { get; set; }
 
+    [NopResourceDisplayName("Admin.Configuration.Settings.Catalog.NumberOfProductsToExport")]
+    public int CustomNumberOfProductsToExport { get; set; }
+    public bool CustomNumberOfProductsToExport_OverrideForStore { get; set; }
+
     #endregion
 }

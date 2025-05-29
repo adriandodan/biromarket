@@ -1,10 +1,13 @@
---DROP PROCEDURE IF EXISTS custom_ExportAllProducts;
---DELIMITER //
+--DELIMITER $$
 
---CREATE PROCEDURE custom_ExportAllProducts()
+--DROP PROCEDURE IF EXISTS custom_ExportAllProducts$$
+
+--CREATE PROCEDURE custom_ExportAllProducts(
+--    IN withPictures BOOLEAN DEFAULT TRUE,
+--    IN limitValue INT DEFAULT 100000
+--)
 --BEGIN
 --    DECLARE WebsiteUrl TEXT DEFAULT 'https://shop.biromarket.ro/images/thumbs/';
---    DECLARE LimitValue INT DEFAULT 100;
 
 --    WITH RECURSIVE CategoryPaths AS (
 --        SELECT
@@ -34,7 +37,7 @@
 --        LEFT JOIN SpecificationAttributeOption sao ON sao.Id = m.SpecificationAttributeOptionId
 --        LEFT JOIN SpecificationAttribute sa ON sa.Id = sao.SpecificationAttributeId
 --    )
-
+    
 --    SELECT
 --        p.Sku AS SKU,
 --        p.Name AS ProductName,
@@ -59,21 +62,25 @@
 --            LIMIT 1
 --        ) AS Category,
 
---        (
---            SELECT GROUP_CONCAT(
---                CONCAT(
---                    WebsiteUrl,
---                    LPAD(pic.Id, 7, '0'), '_',
---                    pic.SeoFilename, '_550.',
---                    SUBSTRING_INDEX(pic.MimeType, '/', -1)
+--        CASE 
+--            WHEN withPictures THEN
+--                (
+--                    SELECT GROUP_CONCAT(
+--                        CONCAT(
+--                            WebsiteUrl,
+--                            LPAD(pic.Id, 7, '0'), '_',
+--                            pic.SeoFilename, '_550.',
+--                            SUBSTRING_INDEX(pic.MimeType, '/', -1)
+--                        )
+--                        ORDER BY ppm.DisplayOrder
+--                        SEPARATOR ','
+--                    )
+--                    FROM Product_Picture_Mapping ppm
+--                    JOIN Picture pic ON pic.Id = ppm.PictureId
+--                    WHERE ppm.ProductId = p.Id
 --                )
---                ORDER BY ppm.DisplayOrder
---                SEPARATOR ','
---            )
---            FROM Product_Picture_Mapping ppm
---            JOIN Picture pic ON pic.Id = ppm.PictureId
---            WHERE ppm.ProductId = p.Id
---        ) AS Pictures,
+--            ELSE ''
+--        END AS Pictures,
 
 --        p.StockQuantity AS Stoc,
 
@@ -98,7 +105,8 @@
 --    LEFT JOIN SpecAttrCTE a5 ON a5.ProductId = p.Id AND a5.rn = 5
 
 --    ORDER BY p.Id
---    LIMIT LimitValue;
---END;
---//
+--    LIMIT limitValue;
+
+--END$$
+
 --DELIMITER ;

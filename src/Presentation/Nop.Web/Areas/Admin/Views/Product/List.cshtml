@@ -75,11 +75,22 @@
                             <button
                                 type="submit"
                                 formmethod="post"
-                                formaction="@Url.Action("ExportProductsCustom", "ProductCustom")">
+                                formaction="@Url.Action("ExportProductsCustom", "ProductCustom", new { withPictures = false })">
                                 <i class="far fa-file-excel"></i>
                                 Export To Excel (Custom)
                             </button>
                         </li>
+                        <li class="dropdown-item">
+                            <button
+                                type="submit"
+                                formmethod="post"
+                                formaction="@Url.Action("ExportProductsCustom", "ProductCustom", new { withPictures = true })">
+                                <i class="far fa-file-excel"></i>
+                                Export To Excel With Pictures (Custom)
+                            </button>
+                        </li>
+
+
                     </ul>
                 </div>
                 @if (!Model.IsLoggedInAsVendor || Model.AllowVendorsToImportProducts)
