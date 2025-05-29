@@ -105,6 +105,16 @@
     </div>
     <div class="form-group row">
         <div class="col-md-3">
+            <nop-override-store-checkbox asp-for="CustomNumberOfProductsToExport_OverrideForStore" asp-input="CustomNumberOfProductsToExport" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+            <nop-label asp-for="CustomNumberOfProductsToExport" />
+        </div>
+        <div class="col-md-9">
+            <nop-editor asp-for="CustomNumberOfProductsToExport" />
+            <span asp-validation-for="CustomNumberOfProductsToExport"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
             <nop-override-store-checkbox asp-for="EnablePriceRangeFiltering_OverrideForStore" asp-input="EnablePriceRangeFiltering" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
             <nop-label asp-for="EnablePriceRangeFiltering" />
         </div>

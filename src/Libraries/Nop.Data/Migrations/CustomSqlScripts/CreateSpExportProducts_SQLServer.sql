@@ -3,10 +3,11 @@ IF OBJECT_ID('custom_ExportAllProducts', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE custom_ExportAllProducts
+    @WithPictures BIT = 1,          -- include pictures by default
+    @Limit INT = 100000             -- default limit
 AS
 BEGIN
     DECLARE @WebsiteUrl NVARCHAR(MAX) = 'https://shop.biromarket.ro/images/thumbs/';
-    DECLARE @Limit INT = 100;
 
     WITH CategoryPaths AS (
         SELECT 
@@ -60,18 +61,22 @@ BEGIN
             ORDER BY LEN(cp.FullPath) DESC
         ) AS Category,
 
-        (
-            SELECT STRING_AGG(
-                @WebsiteUrl +
-                RIGHT('0000000' + CAST(pic.Id AS VARCHAR), 7) + '_' +
-                pic.SeoFilename + '_550.' +
-                RIGHT(pic.MimeType, CHARINDEX('/', REVERSE(pic.MimeType)) - 1),
-                ','
-            )
-            FROM Product_Picture_Mapping ppm
-            JOIN Picture pic ON pic.Id = ppm.PictureId
-            WHERE ppm.ProductId = p.Id
-        ) AS Pictures,
+        CASE 
+            WHEN @WithPictures = 1 THEN
+                (
+                    SELECT STRING_AGG(
+                        @WebsiteUrl +
+                        RIGHT('0000000' + CAST(pic.Id AS VARCHAR), 7) + '_' +
+                        pic.SeoFilename + '_550.' +
+                        RIGHT(pic.MimeType, CHARINDEX('/', REVERSE(pic.MimeType)) - 1),
+                        ','
+                    )
+                    FROM Product_Picture_Mapping ppm
+                    JOIN Picture pic ON pic.Id = ppm.PictureId
+                    WHERE ppm.ProductId = p.Id
+                )
+            ELSE ''
+        END AS Pictures,
 
         p.StockQuantity AS Stoc,
 

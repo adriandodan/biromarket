@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Migrations\CustomSqlScripts\CreateSpExportProducts_MySQL.mysql">
+    <Content Include="Migrations\CustomSqlScripts\CreateSpExportProducts_MySQL.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Migrations\CustomSqlScripts\CreateSpExportProducts_SQLServer.sql">

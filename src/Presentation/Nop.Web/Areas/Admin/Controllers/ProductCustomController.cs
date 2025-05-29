@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Math;
 using Irony.Parsing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
@@ -13,6 +14,7 @@ using Nop.Core.Http;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Services.Catalog;
+using Nop.Services.Configuration;
 using Nop.Services.ExportImport;
 using Nop.Services.Localization;
 using Nop.Services.Media;
@@ -43,6 +45,7 @@ public class ProductCustomController : BaseAdminController
     private readonly IManufacturerService _manufacturerService;
     private readonly IProductTagService _productTagService;
     private readonly ISpecificationAttributeService _specificationAttributeService;
+    protected readonly ISettingService _settingService;
 
     private readonly string _connectionString;
     public ProductCustomController(
@@ -60,7 +63,11 @@ public class ProductCustomController : BaseAdminController
         ILogger logger, 
         IHttpClientFactory httpClientFactory, 
         INopDataProvider dataProvider, 
-        IUrlRecordService urlRecordService, IManufacturerService manufacturerService, IProductTagService productTagService, ISpecificationAttributeService specificationAttributeService)
+        IUrlRecordService urlRecordService, 
+        IManufacturerService manufacturerService,
+        IProductTagService productTagService,
+        ISpecificationAttributeService specificationAttributeService, 
+        ISettingService settingService)
     {
         _productService = productService;
         _pictureService = pictureService;
@@ -81,115 +88,120 @@ public class ProductCustomController : BaseAdminController
         _manufacturerService = manufacturerService;
         _productTagService = productTagService;
         _specificationAttributeService = specificationAttributeService;
+        _settingService = settingService;
         _connectionString = DataSettingsManager.LoadSettings().ConnectionString;
     }
 
     [HttpPost, ActionName("ExportProductsCustom")]
-    public IActionResult ExportProductsCustomAsync()
+    public IActionResult ExportProductsCustomAsync(bool? withPictures)
     {
         var dataTable = new DataTable();
         var isMySql = _dataProvider.GetType().Name.Contains("MySql");
+        var numberOfProductsToExport = _settingService.LoadSetting<CatalogSettings>()?.CustomNumberOfProductsToExport;
+
+        var takePictures = withPictures ?? false;
 
         if (isMySql)
         {
-            using (var conn = new MySqlConnection(_connectionString))
-            using (var cmd = new MySqlCommand("custom_ExportAllProducts", conn))
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
+            using var conn = new MySqlConnection(_connectionString);
+            using var cmd = new MySqlCommand("custom_ExportAllProducts", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
 
-                conn.Open();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    dataTable.Load(reader);
-                }
-            }
+            // Add the withPictures parameter (MySQL parameter names are usually case-insensitive)
+            cmd.Parameters.AddWithValue("withPictures", takePictures);
+
+            // Add the limit parameter
+            cmd.Parameters.AddWithValue("limitValue", numberOfProductsToExport);
+
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
         }
         else
         {
-            using (var conn = new SqlConnection(_connectionString))
-            using (var cmd = new SqlCommand("custom_ExportAllProducts", conn))
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("custom_ExportAllProducts", conn);
+            cmd.CommandType = CommandType.StoredProcedure;
 
-                conn.Open();
-                using (var reader = cmd.ExecuteReader())
-                {
-                    dataTable.Load(reader);
-                }
-            }
+            // Add the withPictures parameter (SQL Server expects '@withPictures')
+            cmd.Parameters.AddWithValue("@withPictures", takePictures);
+
+            // Add the limit parameter
+            cmd.Parameters.AddWithValue("@Limit", numberOfProductsToExport);
+
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            dataTable.Load(reader);
         }
 
-        using (var workbook = new XLWorkbook())
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Products");
+
+        // Write headers
+        for (int col = 0; col < dataTable.Columns.Count; col++)
         {
-            var worksheet = workbook.Worksheets.Add("Products");
+            worksheet.Cell(1, col + 1).Value = dataTable.Columns[col].ColumnName;
+        }
 
-            // Write headers
-            for (int col = 0; col < dataTable.Columns.Count; col++)
+        // Bold header row
+        worksheet.Range(1, 1, 1, dataTable.Columns.Count).Style.Font.SetBold();
+
+        // Write data with formatting
+        for (var row = 0; row < dataTable.Rows.Count; row++)
+        {
+            for (var col = 0; col < dataTable.Columns.Count; col++)
             {
-                worksheet.Cell(1, col + 1).Value = dataTable.Columns[col].ColumnName;
-            }
+                var cell = worksheet.Cell(row + 2, col + 1);
+                var value = dataTable.Rows[row][col];
+                var columnName = dataTable.Columns[col].ColumnName;
 
-            // Bold header row
-            worksheet.Range(1, 1, 1, dataTable.Columns.Count).Style.Font.SetBold();
-
-            // Write data with formatting
-            for (int row = 0; row < dataTable.Rows.Count; row++)
-            {
-                for (int col = 0; col < dataTable.Columns.Count; col++)
+                if (value is DBNull)
                 {
-                    var cell = worksheet.Cell(row + 2, col + 1);
-                    var value = dataTable.Rows[row][col];
-                    var columnName = dataTable.Columns[col].ColumnName;
+                    cell.Value = Convert.ToString(value);
+                    continue;
+                }
 
-                    if (value is DBNull)
+                if (columnName.Equals("Price", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (decimal.TryParse(value.ToString(), out var price))
                     {
-                        cell.Value = Convert.ToString(value);
-                        continue;
-                    }
-
-                    if (columnName.Equals("Price", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (decimal.TryParse(value.ToString(), out var price))
-                        {
-                            cell.Value = price;
-                            cell.Style.NumberFormat.Format = "#,##0.00";
-                        }
-                        else
-                        {
-                            cell.Value = value.ToString();
-                        }
-                    }
-                    else if (columnName.Equals("Stoc", StringComparison.OrdinalIgnoreCase))
-                    {
-                        if (int.TryParse(value.ToString(), out var stock))
-                        {
-                            cell.Value = stock;
-                            cell.Style.NumberFormat.Format = "0";
-                        }
-                        else
-                        {
-                            cell.Value = value.ToString();
-                        }
+                        cell.Value = price;
+                        cell.Style.NumberFormat.Format = "#,##0.00";
                     }
                     else
                     {
-                        cell.Value = Convert.ToString(value);
+                        cell.Value = value.ToString();
                     }
                 }
-            }
-
-            using (var stream = new MemoryStream())
-            {
-                workbook.SaveAs(stream);
-                stream.Position = 0;
-                var timestamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
-                var filename = $"ProductsExport_{timestamp}.xlsx";
-
-                return File(stream.ToArray(),
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    filename);
+                else if (columnName.Equals("Stoc", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (int.TryParse(value.ToString(), out var stock))
+                    {
+                        cell.Value = stock;
+                        cell.Style.NumberFormat.Format = "0";
+                    }
+                    else
+                    {
+                        cell.Value = value.ToString();
+                    }
+                }
+                else
+                {
+                    cell.Value = Convert.ToString(value);
+                }
             }
         }
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+        var filename = $"ProductsExport_{timestamp}.xlsx";
+
+        return File(stream.ToArray(),
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            filename);
     }
 
     [HttpPost, ActionName("ImportExcelCustomVariants")]

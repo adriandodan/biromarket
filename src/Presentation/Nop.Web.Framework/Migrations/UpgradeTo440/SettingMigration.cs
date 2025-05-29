@@ -109,6 +109,12 @@ public class SettingMigration : MigrationBase
             settingService.SaveSetting(catalogSettings, settings => settings.CustomHideAdminProductsButtons);
         }
 
+        if (!settingService.SettingExists(catalogSettings, settings => settings.CustomNumberOfProductsToExport))
+        {
+            catalogSettings.CustomNumberOfProductsToExport = NopCatalogDefaults.DefaultNumberProductsToExport;
+            settingService.SaveSetting(catalogSettings, settings => settings.CustomNumberOfProductsToExport);
+        }
+
         if (!settingService.SettingExists(catalogSettings, settings => settings.EnablePriceRangeFiltering))
         {
             catalogSettings.EnablePriceRangeFiltering = true;
