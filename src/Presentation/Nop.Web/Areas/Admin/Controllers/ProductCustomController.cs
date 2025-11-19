@@ -395,13 +395,11 @@ public class ProductCustomController : BaseAdminController
             {
                 var picturesUrls = pictures.Split(",").Select(c => c.Trim()).ToList();
                 foreach (var pictureUrl in picturesUrls)
-                {// Handle pictures for the product
+                {
+                    // Handle pictures for the product
                     var imagePathTemp = await DownloadFileAsync(pictureUrl);
 
-                    if (productPictureId == 0)
-                    {
-                        productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
-                    }
+                    productPictureId = await ImportProductImageUsingHashAsync(imagePathTemp, product.Sku);
 
                     if (!string.IsNullOrEmpty(imagePathTemp))
                     {
@@ -818,7 +816,7 @@ public class ProductCustomController : BaseAdminController
         if (!Uri.IsWellFormedUriString(urlString, UriKind.Absolute))
             return urlString;
 
-        //ensure that temp directory is created
+        // ensure that temp directory is created
         var tempDirectory = _fileProvider.MapPath(ExportImportDefaults.UploadsTempPath);
         _fileProvider.CreateDirectory(tempDirectory);
 
@@ -826,11 +824,16 @@ public class ProductCustomController : BaseAdminController
         if (string.IsNullOrEmpty(fileName))
             return string.Empty;
 
+        // ⭐ Replace folder separators with underscores
+        fileName = fileName.Replace("/", "_").Replace("\\", "_");
+
         var filePath = _fileProvider.Combine(tempDirectory, fileName);
+
         try
         {
             var client = _httpClientFactory.CreateClient(NopHttpDefaults.DefaultHttpClient);
             var fileData = await client.GetByteArrayAsync(urlString);
+
             await using var fs = new FileStream(filePath, FileMode.OpenOrCreate);
             fs.Write(fileData, 0, fileData.Length);
 
@@ -843,6 +846,7 @@ public class ProductCustomController : BaseAdminController
 
         return string.Empty;
     }
+
 
     public static string GetPathWithoutDomain(string url)
     {
