@@ -813,6 +813,8 @@ public class ProductCustomController : BaseAdminController
         if (string.IsNullOrEmpty(urlString))
             return string.Empty;
 
+        urlString = Uri.EscapeUriString(urlString);
+
         if (!Uri.IsWellFormedUriString(urlString, UriKind.Absolute))
             return urlString;
 
@@ -820,7 +822,7 @@ public class ProductCustomController : BaseAdminController
         var tempDirectory = _fileProvider.MapPath(ExportImportDefaults.UploadsTempPath);
         _fileProvider.CreateDirectory(tempDirectory);
 
-        var fileName = _fileProvider.GetFileName(urlString);
+        var fileName = GetPathWithoutDomain(urlString);
         if (string.IsNullOrEmpty(fileName))
             return string.Empty;
 
@@ -840,6 +842,12 @@ public class ProductCustomController : BaseAdminController
         }
 
         return string.Empty;
+    }
+
+    public static string GetPathWithoutDomain(string url)
+    {
+        var uri = new Uri(url);
+        return uri.AbsolutePath.TrimStart('/');
     }
 
     protected virtual async Task<int> ImportProductImageUsingHashAsync(string productPictureMetadata, string productSku)
