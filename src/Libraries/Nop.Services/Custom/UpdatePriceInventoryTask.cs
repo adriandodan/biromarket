@@ -103,7 +103,7 @@ public partial class UpdatePriceInventoryTask(
 
         var indexCodProdus = GetColumnIndex(headers, "COD PRODUS");
         var indexStoc = GetColumnIndex(headers, "STOC");
-        var indexPret = GetColumnIndex(headers, "PRET RRP");
+        var indexPret = GetColumnIndex(headers, "PRET 1 BUC");
 
         if (indexCodProdus == -1 || indexStoc == -1 || indexPret == -1)
         {
@@ -142,21 +142,40 @@ public partial class UpdatePriceInventoryTask(
                 continue;
             }
 
-            // parse stoc
-            if (!int.TryParse(stocRaw, NumberStyles.Any, CultureInfo.InvariantCulture, out var stock))
+            // Parse stock - must be a whole number (no decimals)
+            if (!int.TryParse(stocRaw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var stock))
             {
-                await logger.InformationAsync($"Invalid stock quantity. {line}");
+                await logger.InformationAsync($"Invalid stock quantity (must be whole number): '{stocRaw}'. {line}");
                 parseErrors++;
                 continue;
             }
 
-            // parse preț
-            if (!decimal.TryParse(pretRaw, NumberStyles.Any, CultureInfo.InvariantCulture, out var price))
+            // Validate stock is non-negative
+            if (stock < 0)
             {
-                await logger.InformationAsync($"Invalid price. {line}");
+                await logger.InformationAsync($"Invalid stock quantity (cannot be negative): {stock}. {line}");
                 parseErrors++;
                 continue;
             }
+
+            // Parse price - can have decimals, will be formatted to 2 decimal places
+            if (!decimal.TryParse(pretRaw, NumberStyles.Number, CultureInfo.InvariantCulture, out var originalPrice))
+            {
+                await logger.InformationAsync($"Invalid price format: '{pretRaw}'. {line}");
+                parseErrors++;
+                continue;
+            }
+
+            // Validate price is positive
+            if (originalPrice <= 0)
+            {
+                await logger.InformationAsync($"Invalid price (must be positive): {originalPrice:F2}. {line}");
+                parseErrors++;
+                continue;
+            }
+
+            // Apply 50% markup to the price from CSV and round to 2 decimal places
+            var price = Math.Round(originalPrice * 1.50m, 2, MidpointRounding.AwayFromZero);
 
             processed++;
 
@@ -177,23 +196,23 @@ public partial class UpdatePriceInventoryTask(
             // 4. Actualizează stoc și preț doar dacă sunt diferite
             if (priceChanged || stockChanged)
             {
-                product.StockQuantity = stock;
-                product.Price = price;
+                product.StockQuantity = stock;  // Integer (no decimals)
+                product.Price = price;          // Decimal (2 decimal places)
 
                 await productService.UpdateProductAsync(product);
                 updated++;
 
-                // 5. Log modificările cu valorile vechi și noi
+                // 5. Log modificările cu valorile vechi și noi, incluzând prețul original din CSV
                 var changes = new List<string>();
                 
                 if (priceChanged)
                 {
-                    changes.Add($"Price: {oldPrice:F2} → {price:F2}");
+                    changes.Add($"Price: {oldPrice:F2} → {price:F2} (CSV: {originalPrice:F2} +50%)");
                 }
                 
                 if (stockChanged)
                 {
-                    changes.Add($"Stock: {oldStock} → {stock}");
+                    changes.Add($"Stock: {oldStock} → {stock}");  // No decimal formatting for stock
                 }
 
                 await logger.InformationAsync($"UpdatePriceInventoryTask: Product '{sku}' updated - {string.Join(", ", changes)}");
