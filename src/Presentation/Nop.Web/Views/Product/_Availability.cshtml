@@ -29,8 +29,7 @@
     var stockClass = Model.QuantityInStock switch
     {
         <= 0 => "stock-red",
-        > 0 and <= 5000 => "stock-yellow",
-        > 5000 => "stock-green",
+        > 0 => "stock-green",
     };
 
     <div class="availability">
