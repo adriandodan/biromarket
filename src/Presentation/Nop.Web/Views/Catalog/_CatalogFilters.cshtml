@@ -25,15 +25,25 @@
 </div>
 
 <script asp-location="Footer">
-    $(function() {
-        $('.block .filter-title').on('click', function () {
+    $(function () {
+
+        function isMobile() {
             var e = window, a = 'inner';
             if (!('innerWidth' in window)) {
                 a = 'client';
                 e = document.documentElement || document.body;
             }
-            var result = { width: e[a + 'Width'], height: e[a + 'Height'] };
-            if (result.width < 1001) {
+            return e[a + 'Width'] < 1001;
+        }
+
+        // ✅ Collapse filters by default on mobile
+        if (isMobile()) {
+            $('.block.product-filters .filter-content').hide();
+        }
+
+        // ✅ Toggle on click (mobile only)
+        $('.block .filter-title').on('click', function () {
+            if (isMobile()) {
                 $(this).siblings('.filter-content').slideToggle('slow');
             }
         });
