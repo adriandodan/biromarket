@@ -45,10 +45,18 @@
                 
                 // Add mobile class and cursor pointer to filter titles for visual feedback
                 $('.block .filter-title').addClass('mobile-collapsible').css('cursor', 'pointer');
+                
+                // Add collapse/expand indicators
+                $('.block .filter-title').each(function() {
+                    if (!$(this).find('.mobile-toggle-icon').length) {
+                        $(this).append('<span class="mobile-toggle-icon" style="float: right; font-size: 12px;">▼</span>');
+                    }
+                });
             } else {
                 // Show filters on desktop and remove mobile styling
                 $('.block .filter-content').show();
                 $('.block .filter-title').removeClass('mobile-collapsible').css('cursor', '');
+                $('.block .filter-title .mobile-toggle-icon').remove();
             }
         }
 
@@ -59,9 +67,17 @@
             
             if (isMobile()) {
                 var $filterContent = $(this).siblings('.filter-content');
+                var $icon = $(this).find('.mobile-toggle-icon');
                 
                 // Toggle the content with smooth animation
-                $filterContent.slideToggle('slow');
+                $filterContent.slideToggle('slow', function() {
+                    // Update icon based on visibility
+                    if ($filterContent.is(':visible')) {
+                        $icon.text('▲'); // Up arrow when expanded
+                    } else {
+                        $icon.text('▼'); // Down arrow when collapsed
+                    }
+                });
             }
         });
 
