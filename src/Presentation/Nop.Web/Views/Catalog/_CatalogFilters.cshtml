@@ -26,35 +26,15 @@
 
 <script asp-location="Footer">
     $(function() {
-        // Function to check if we're on mobile
-        function isMobile() {
+        $('.block .filter-title').on('click', function () {
             var e = window, a = 'inner';
             if (!('innerWidth' in window)) {
                 a = 'client';
                 e = document.documentElement || document.body;
             }
             var result = { width: e[a + 'Width'], height: e[a + 'Height'] };
-            return result.width < 1001;
-        }
-
-        // Hide filters by default on mobile
-        if (isMobile()) {
-            $('.block .filter-content').hide();
-        }
-
-        // Handle filter title clicks
-        $('.block .filter-title').on('click', function () {
-            if (isMobile()) {
+            if (result.width < 1001) {
                 $(this).siblings('.filter-content').slideToggle('slow');
-            }
-        });
-
-        // Handle window resize to show/hide filters appropriately
-        $(window).on('resize', function() {
-            if (isMobile()) {
-                $('.block .filter-content').hide();
-            } else {
-                $('.block .filter-content').show();
             }
         });
     });
