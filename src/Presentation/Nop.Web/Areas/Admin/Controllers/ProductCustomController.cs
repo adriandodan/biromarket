@@ -320,6 +320,21 @@ public class ProductCustomController : BaseAdminController
                 continue;
             }
 
+            // Determine OrderMinimumQuantity based on price
+            int orderMinimumQuantity;
+            if (price >= 0 && price < 5)
+            {
+                orderMinimumQuantity = 10;
+            }
+            else if (price >= 5 && price < 10)
+            {
+                orderMinimumQuantity = 5;
+            }
+            else
+            {
+                orderMinimumQuantity = 1;
+            }
+
             // Load or create the product as before
             var product = await _productService.GetProductBySkuAsync(sku);
             if (product == null)
@@ -334,7 +349,7 @@ public class ProductCustomController : BaseAdminController
                     Published = true,
                     VisibleIndividually = true,
                     OrderMaximumQuantity = 10000,
-                    OrderMinimumQuantity = 1,
+                    OrderMinimumQuantity = orderMinimumQuantity,
                     ProductType = ProductType.SimpleProduct,
                     IsShipEnabled = true,
                     ManageInventoryMethod = isVariantsImport ? ManageInventoryMethod.ManageStockByAttributes : ManageInventoryMethod.ManageStock,
@@ -352,7 +367,7 @@ public class ProductCustomController : BaseAdminController
                 product.Price = price;
                 product.VisibleIndividually = true;
                 product.OrderMaximumQuantity = 10000;
-                product.OrderMinimumQuantity = 1;
+                product.OrderMinimumQuantity = orderMinimumQuantity;
                 product.ProductType = ProductType.SimpleProduct;
                 product.IsShipEnabled = true;
                 product.ManageInventoryMethod = isVariantsImport
