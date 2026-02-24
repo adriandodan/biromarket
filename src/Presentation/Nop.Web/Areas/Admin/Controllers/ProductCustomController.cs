@@ -748,7 +748,7 @@ public class ProductCustomController : BaseAdminController
                 {
                     parentCategoryId = parentCategory.Id;
                 }
-                await CreateNewCategoryAsync(categoryName, parentCategoryId, i == 2, imageId);
+                await CreateNewCategoryAsync(categoryName, parentCategoryId, i == 1, imageId);
             }
 
             if (i == categoryNames.Count - 1)
