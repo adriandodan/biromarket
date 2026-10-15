@@ -1,8 +1,8 @@
-﻿@model CatalogProductsModel
+﻿@model PromotionsPageModel
 @{
     Layout = "_ColumnsOne";
 
-    NopHtml.AddTitleParts("Promotii");
+    NopHtml.AddTitleParts("Promoții");
     NopHtml.AppendPageCssClassParts("html-promotions-page");
 }
 
@@ -10,14 +10,30 @@
     <section class="bm-promotions-hero" aria-labelledby="promotions-title">
         <div class="bm-promotions-copy">
             <span class="bm-promotions-kicker">OCAZII BUNE, PREȚURI MAI MICI</span>
-            <h1 id="promotions-title">Promotii</h1>
-            <p>Produse alese pentru tine, acum la prețuri speciale. Descoperă oferta și profită cât timp este disponibilă.</p>
-            <a class="bm-promotions-cta" href="#promotions-products">Vezi produsele la reducere <span aria-hidden="true">&darr;</span></a>
+            <h1 id="promotions-title">Promoții</h1>
+            @if (Model.HasActivePromotions)
+            {
+                <p>Produse alese pentru tine, acum la prețuri speciale. Descoperă oferta și profită cât timp este disponibilă.</p>
+                <a class="bm-promotions-cta" href="#promotions-products">Vezi produsele la reducere <span aria-hidden="true">&darr;</span></a>
+            }
+            else
+            {
+                <p>Nu sunt reduceri active momentan, dar am ales pentru tine câteva produse care merită descoperite.</p>
+                <a class="bm-promotions-cta" href="#promotions-products">Descoperă produsele <span aria-hidden="true">&darr;</span></a>
+            }
         </div>
         <div class="bm-promotions-stamp" aria-hidden="true">
-            <span>PREȚURI</span>
-            <strong>MAI<br />MICI</strong>
-            <span>OFERTE ACTIVE</span>
+            <span>@(Model.HasActivePromotions ? "PREȚURI" : "SELECȚIE")</span>
+            @if (Model.HasActivePromotions)
+            {
+                <strong>MAI<br />MICI</strong>
+                <span>OFERTE ACTIVE</span>
+            }
+            else
+            {
+                <strong>PRODUSE<br />ALESE</strong>
+                <span>PENTRU TINE</span>
+            }
         </div>
         <span class="bm-promotions-spark bm-promotions-spark-one" aria-hidden="true">✳</span>
         <span class="bm-promotions-spark bm-promotions-spark-two" aria-hidden="true">✳</span>
@@ -26,14 +42,22 @@
     <section class="bm-promotions-list" id="promotions-products" aria-labelledby="promotions-list-title">
         <div class="bm-promotions-heading">
             <div>
-                <span class="bm-promotions-kicker">MERITĂ SĂ LE PRINZI</span>
-                <h2 id="promotions-list-title">Oferte în desfășurare</h2>
+                <span class="bm-promotions-kicker">@(Model.HasActivePromotions ? "MERITĂ SĂ LE PRINZI" : "ALESE PENTRU TINE")</span>
+                <h2 id="promotions-list-title">@(Model.HasActivePromotions ? "Oferte în desfășurare" : "Produse de descoperit")</h2>
             </div>
-            @if (Model.Products.Count > 0)
+            @if (Model.HasActivePromotions)
             {
-                <span class="bm-promotions-count">@Model.Products.Count produse la ofertă</span>
+                <span class="bm-promotions-count">@Model.ProductsModel.Products.Count produse la ofertă</span>
+            }
+            else
+            {
+                <span class="bm-promotions-count">Selecție din magazin</span>
             }
         </div>
-        @await Html.PartialAsync("_ProductsInGridOrLines", Model)
+        @if (!Model.HasActivePromotions && Model.ProductsModel.Products.Count > 0)
+        {
+            <p class="bm-promotions-intro">În acest moment nu avem produse reduse. Între timp, poți răsfoi aceste produse din magazin.</p>
+        }
+        @await Html.PartialAsync("_ProductsInGridOrLines", Model.ProductsModel)
     </section>
 </main>

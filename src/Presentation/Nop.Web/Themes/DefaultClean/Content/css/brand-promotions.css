@@ -146,6 +146,13 @@
   white-space: nowrap;
 }
 
+.bm-promotions-intro {
+  margin: -8px 0 20px;
+  color: var(--bm-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .html-promotions-page .bm-promotions-list .no-result {
   padding: 30px;
   border: 1px solid var(--bm-line);

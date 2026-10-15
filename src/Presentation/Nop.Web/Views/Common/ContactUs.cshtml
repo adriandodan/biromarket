@@ -12,7 +12,6 @@
         <h1>@T("PageTitle.ContactUs")</h1>
     </div>
     <div class="page-body">
-        @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "ContactUs" })
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ContactUsTop, additionalData = Model })
         @if (Model.SuccessfullySent)
         {
@@ -64,6 +63,9 @@
                 </div>
             </form>
         }
+        <div class="contact-details">
+            @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "ContactUs" })
+        </div>
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ContactUsBottom, additionalData = Model })
     </div>
 </div>

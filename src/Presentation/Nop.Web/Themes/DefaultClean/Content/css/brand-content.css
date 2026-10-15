@@ -179,6 +179,9 @@
 .html-contact-page .contact-page .page-body > .topic-block {
   max-width: 880px;
 }
+.html-contact-page .contact-page .contact-details .topic-block-title {
+  display: none;
+}
 
 .html-topic-page .topic-page .page-body h2,
 .html-topic-page .topic-page .page-body h3,
@@ -401,8 +404,12 @@
 .html-order-details-page .order-details-area,
 .html-order-details-page .shipping-info-wrap,
 .html-order-details-page .billing-info-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.html-order-details-page .order-details-area { max-width: 1120px; margin-inline: auto; }
 .html-order-details-page .order-details-area > .billing-info-wrap,
 .html-order-details-page .order-details-area > .shipping-info-wrap { width: auto; max-width: none; margin: 0; background: transparent; padding: 0; color: inherit; }
+.html-order-details-page .order-details-area > *,
+.html-order-details-page .billing-info-wrap > *,
+.html-order-details-page .shipping-info-wrap > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .html-order-details-page .billing-info-wrap,
 .html-order-details-page .shipping-info-wrap { margin-bottom: 18px; }
 .html-order-details-page .payment-method-info,

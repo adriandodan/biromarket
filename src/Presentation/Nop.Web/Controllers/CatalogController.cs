@@ -328,31 +328,63 @@ public partial class CatalogController : BasePublicController
     public virtual async Task<IActionResult> Promotions()
     {
         var store = await _storeContext.GetCurrentStoreAsync();
-        var discountedProducts = await _productService.GetProductsWithAppliedDiscountAsync();
-        var products = new List<Product>();
-        foreach (var product in discountedProducts)
+        var productsOnSale = new List<ProductOverviewModel>();
+        var recommendedProducts = new List<ProductOverviewModel>();
+        const int pageSize = 100;
+        const int recommendationCount = 12;
+        var pageIndex = 0;
+        IPagedList<Product> productPage;
+
+        do
         {
-            if (!product.Published
-                || !product.VisibleIndividually
-                || !_productService.ProductIsAvailable(product)
-                || !await _aclService.AuthorizeAsync(product)
-                || !await _storeMappingService.AuthorizeAsync(product, store.Id))
-                continue;
+            productPage = await _productService.SearchProductsAsync(
+                pageIndex,
+                pageSize,
+                storeId: store.Id,
+                visibleIndividuallyOnly: true,
+                orderBy: ProductSortingEnum.Position);
+            var availableProducts = new List<Product>();
 
-            products.Add(product);
-        }
+            foreach (var product in productPage)
+            {
+                if (!product.VisibleIndividually
+                    || !_productService.ProductIsAvailable(product)
+                    || !await _aclService.AuthorizeAsync(product)
+                    || !await _storeMappingService.AuthorizeAsync(product, store.Id))
+                    continue;
 
-        var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(products);
-        var productsOnSale = productModels
-            .Where(product => product.ProductPrice.OldPriceValue.HasValue
-                && product.ProductPrice.PriceValue.HasValue
-                && product.ProductPrice.OldPriceValue > product.ProductPrice.PriceValue)
-            .ToList();
+                availableProducts.Add(product);
+            }
 
-        return View(new CatalogProductsModel
+            var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(availableProducts);
+            foreach (var productModel in productModels)
+            {
+                if (productModel.ProductPrice.OldPriceValue is decimal oldPrice
+                    && productModel.ProductPrice.PriceValue is decimal currentPrice
+                    && oldPrice > currentPrice)
+                {
+                    productsOnSale.Add(productModel);
+                }
+                else if (recommendedProducts.Count < recommendationCount)
+                {
+                    recommendedProducts.Add(productModel);
+                }
+            }
+
+            pageIndex++;
+        } while (pageIndex < productPage.TotalPages);
+
+        var hasActivePromotions = productsOnSale.Count > 0;
+        var displayedProducts = hasActivePromotions ? productsOnSale : recommendedProducts;
+
+        return View(new PromotionsPageModel
         {
-            Products = productsOnSale,
-            NoResultMessage = "Momentan nu sunt produse la reducere. Revino curând pentru oferte noi."
+            HasActivePromotions = hasActivePromotions,
+            ProductsModel = new CatalogProductsModel
+            {
+                Products = displayedProducts,
+                NoResultMessage = "Nu am găsit produse disponibile momentan."
+            }
         });
     }
 
