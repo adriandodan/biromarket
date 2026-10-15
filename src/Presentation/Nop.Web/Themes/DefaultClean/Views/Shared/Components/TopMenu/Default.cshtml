@@ -86,7 +86,6 @@ else
             <li><a href="@Url.RouteUrl("BiromarketProducts")" aria-current="@(currentAction == "Products" ? "page" : null)">Produse</a></li>
             <li><a href="@Url.RouteUrl("BiromarketCategories")" aria-current="@(currentAction == "Categories" ? "page" : null)">Categorii</a></li>
             <li><a href="@Url.RouteUrl("BiromarketBrands")" aria-current="@(currentAction == "Brands" ? "page" : null)">Branduri</a></li>
-            @await Component.InvokeAsync(typeof(PopularProductTagsViewComponent), new { viewName = "Header" })
             @foreach (var topic in Model.Topics)
             {
                 <li><a href="@(Url.RouteUrl<Topic>(new { SeName = topic.SeName }))">@topic.Name</a></li>
