@@ -2,11 +2,13 @@
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
+using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Vendors;
 using Nop.Core.Rss;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
+using Nop.Services.Discounts;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Security;
@@ -32,11 +34,13 @@ public partial class CatalogController : BasePublicController
     protected readonly ICatalogModelFactory _catalogModelFactory;
     protected readonly ICategoryService _categoryService;
     protected readonly ICustomerActivityService _customerActivityService;
+    protected readonly IDiscountService _discountService;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly ILocalizationService _localizationService;
     protected readonly IManufacturerService _manufacturerService;
     protected readonly INopUrlHelper _nopUrlHelper;
     protected readonly IPermissionService _permissionService;
+    protected readonly IPriceFormatter _priceFormatter;
     protected readonly IProductModelFactory _productModelFactory;
     protected readonly IProductService _productService;
     protected readonly IProductTagService _productTagService;
@@ -58,11 +62,13 @@ public partial class CatalogController : BasePublicController
         ICatalogModelFactory catalogModelFactory,
         ICategoryService categoryService,
         ICustomerActivityService customerActivityService,
+        IDiscountService discountService,
         IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
         IManufacturerService manufacturerService,
         INopUrlHelper nopUrlHelper,
         IPermissionService permissionService,
+        IPriceFormatter priceFormatter,
         IProductModelFactory productModelFactory,
         IProductService productService,
         IProductTagService productTagService,
@@ -80,11 +86,13 @@ public partial class CatalogController : BasePublicController
         _catalogModelFactory = catalogModelFactory;
         _categoryService = categoryService;
         _customerActivityService = customerActivityService;
+        _discountService = discountService;
         _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
         _manufacturerService = manufacturerService;
         _nopUrlHelper = nopUrlHelper;
         _permissionService = permissionService;
+        _priceFormatter = priceFormatter;
         _productModelFactory = productModelFactory;
         _productService = productService;
         _productTagService = productTagService;
@@ -330,49 +338,110 @@ public partial class CatalogController : BasePublicController
         var store = await _storeContext.GetCurrentStoreAsync();
         var productsOnSale = new List<ProductOverviewModel>();
         var recommendedProducts = new List<ProductOverviewModel>();
-        const int pageSize = 100;
         const int recommendationCount = 12;
-        var pageIndex = 0;
-        IPagedList<Product> productPage;
+        var candidateProducts = new Dictionary<int, Product>();
+        var discounts = (await _discountService.GetAllDiscountsAsync())
+            .Where(discount => discount.DiscountType is DiscountType.AssignedToSkus
+                or DiscountType.AssignedToCategories
+                or DiscountType.AssignedToManufacturers)
+            .ToList();
 
-        do
+        void AddCandidateProducts(IEnumerable<Product> products)
         {
-            productPage = await _productService.SearchProductsAsync(
-                pageIndex,
-                pageSize,
+            foreach (var product in products)
+                candidateProducts.TryAdd(product.Id, product);
+        }
+
+        foreach (var discount in discounts.Where(discount => discount.DiscountType == DiscountType.AssignedToSkus))
+        {
+            var discountedProducts = await _productService.GetProductsWithAppliedDiscountAsync(discount.Id);
+            AddCandidateProducts(discountedProducts);
+        }
+
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var discountedCategoryIds = new HashSet<int>();
+        foreach (var discount in discounts.Where(discount => discount.DiscountType == DiscountType.AssignedToCategories))
+        {
+            var categoryIds = await _categoryService.GetAppliedCategoryIdsAsync(discount, customer);
+            discountedCategoryIds.UnionWith(categoryIds);
+        }
+
+        if (discountedCategoryIds.Count > 0)
+        {
+            var categoryProducts = await _productService.SearchProductsAsync(
+                pageSize: int.MaxValue,
+                categoryIds: discountedCategoryIds.ToList(),
                 storeId: store.Id,
                 visibleIndividuallyOnly: true,
                 orderBy: ProductSortingEnum.Position);
-            var availableProducts = new List<Product>();
+            AddCandidateProducts(categoryProducts);
+        }
+
+        var discountedManufacturerIds = new HashSet<int>();
+        foreach (var discount in discounts.Where(discount => discount.DiscountType == DiscountType.AssignedToManufacturers))
+        {
+            var manufacturerIds = await _manufacturerService.GetAppliedManufacturerIdsAsync(discount, customer);
+            discountedManufacturerIds.UnionWith(manufacturerIds);
+        }
+
+        if (discountedManufacturerIds.Count > 0)
+        {
+            var manufacturerProducts = await _productService.SearchProductsAsync(
+                pageSize: int.MaxValue,
+                manufacturerIds: discountedManufacturerIds.ToList(),
+                storeId: store.Id,
+                visibleIndividuallyOnly: true,
+                orderBy: ProductSortingEnum.Position);
+            AddCandidateProducts(manufacturerProducts);
+        }
+
+        var availableProducts = new List<Product>();
+        foreach (var product in candidateProducts.Values.OrderBy(product => product.DisplayOrder).ThenBy(product => product.Id))
+        {
+            if (!product.VisibleIndividually
+                || !_productService.ProductIsAvailable(product)
+                || !await _aclService.AuthorizeAsync(product)
+                || !await _storeMappingService.AuthorizeAsync(product, store.Id))
+                continue;
+
+            availableProducts.Add(product);
+        }
+
+        var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(availableProducts);
+        foreach (var productModel in productModels)
+        {
+            if (productModel.ProductPrice.OldPriceValue is decimal oldPrice
+                && productModel.ProductPrice.PriceValue is decimal currentPrice
+                && oldPrice > currentPrice)
+            {
+                productModel.ProductPrice.PromotionSavings =
+                    $"Economisești {await _priceFormatter.FormatPriceAsync(oldPrice - currentPrice)}";
+                productsOnSale.Add(productModel);
+            }
+        }
+
+        if (productsOnSale.Count == 0)
+        {
+            var productPage = await _productService.SearchProductsAsync(
+                pageSize: recommendationCount,
+                storeId: store.Id,
+                visibleIndividuallyOnly: true,
+                orderBy: ProductSortingEnum.Position);
+            var availableRecommendations = new List<Product>();
 
             foreach (var product in productPage)
             {
-                if (!product.VisibleIndividually
-                    || !_productService.ProductIsAvailable(product)
+                if (!_productService.ProductIsAvailable(product)
                     || !await _aclService.AuthorizeAsync(product)
                     || !await _storeMappingService.AuthorizeAsync(product, store.Id))
                     continue;
 
-                availableProducts.Add(product);
+                availableRecommendations.Add(product);
             }
 
-            var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(availableProducts);
-            foreach (var productModel in productModels)
-            {
-                if (productModel.ProductPrice.OldPriceValue is decimal oldPrice
-                    && productModel.ProductPrice.PriceValue is decimal currentPrice
-                    && oldPrice > currentPrice)
-                {
-                    productsOnSale.Add(productModel);
-                }
-                else if (recommendedProducts.Count < recommendationCount)
-                {
-                    recommendedProducts.Add(productModel);
-                }
-            }
-
-            pageIndex++;
-        } while (pageIndex < productPage.TotalPages);
+            recommendedProducts.AddRange(
+                await _productModelFactory.PrepareProductOverviewModelsAsync(availableRecommendations));
+        }
 
         var hasActivePromotions = productsOnSale.Count > 0;
         var displayedProducts = hasActivePromotions ? productsOnSale : recommendedProducts;

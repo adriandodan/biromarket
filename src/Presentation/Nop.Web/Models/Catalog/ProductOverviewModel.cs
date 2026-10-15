@@ -44,6 +44,7 @@ public partial record ProductOverviewModel : BaseNopEntityModel
         public decimal? OldPriceValue { get; set; }
         public string Price { get; set; }
         public decimal? PriceValue { get; set; }
+        public string PromotionSavings { get; set; }
         /// <summary>
         /// PAngV baseprice (used in Germany)
         /// </summary>
