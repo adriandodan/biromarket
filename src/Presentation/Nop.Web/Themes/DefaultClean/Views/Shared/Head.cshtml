@@ -10,6 +10,13 @@
     var themeName = await themeContext.GetWorkingThemeNameAsync();
     var supportRtl = await Html.ShouldUseRtlThemeAsync();
 
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-shell.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-pages.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-catalog.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-promotions.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-product.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/brand-content.css");
+
     //add main CSS file
     NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles{(supportRtl ? ".rtl" : "")}.css");
     

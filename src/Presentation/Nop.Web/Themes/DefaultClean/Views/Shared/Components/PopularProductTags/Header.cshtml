@@ -1,0 +1,22 @@
+﻿@model PopularProductTagsModel
+
+@using Nop.Core.Domain.Catalog
+
+@if (Model.Tags.Count > 0)
+{
+    <li class="bm-more-item bm-popular-tags-item">
+        <details class="bm-more-menu">
+            <summary>Etichete populare <span class="bm-chevron" aria-hidden="true"></span></summary>
+            <ul class="bm-more-panel">
+                @foreach (var tag in Model.Tags)
+                {
+                    <li><a href="@(Url.RouteUrl<ProductTag>(new { SeName = tag.SeName }))">@tag.Name <span aria-hidden="true">&nearr;</span></a></li>
+                }
+                @if (Model.TotalTags > Model.Tags.Count)
+                {
+                    <li><a href="@Url.RouteUrl("ProductTagsAll")">Vezi toate etichetele <span aria-hidden="true">&nearr;</span></a></li>
+                }
+            </ul>
+        </details>
+    </li>
+}

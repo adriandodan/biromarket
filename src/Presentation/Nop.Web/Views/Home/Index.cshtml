@@ -2,11 +2,17 @@
 @using Nop.Core
 @inject ILocalizationService localizationService
 @inject IStoreContext storeContext
+@inject Nop.Web.Factories.ITopicModelFactory topicModelFactory
 
 @{
     Layout = "_ColumnsOne";
 
     var homepageTitle = await localizationService.GetLocalizedAsync(await storeContext.GetCurrentStoreAsync(), s => s.HomepageTitle);
+    var homepageText = await topicModelFactory.PrepareTopicModelBySystemNameAsync("HomepageText");
+    var replaceDefaultHomepageText = homepageText?.Title == "Welcome to our store"
+        && homepageText.Body?.StartsWith("<p>Online shopping is the process consumers go through to purchase products or services over the Internet.", StringComparison.Ordinal) == true
+        && homepageText.Body.Contains("You can edit this in the admin site.", StringComparison.Ordinal)
+        && homepageText.Body.Contains("nopCommerce.com", StringComparison.Ordinal);
 
     //title
     if (!string.IsNullOrEmpty(homepageTitle))
@@ -27,8 +33,20 @@
 }
 <div class="page home-page">
     <div class="page-body">
+        @await Html.PartialAsync("_BrandHero")
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
-        @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "HomepageText" })
+        <section class="bm-home-intro" aria-labelledby="bm-home-intro-title">
+            <span class="bm-home-intro-eyebrow">BIROMARKET / IDEI PENTRU ZI CU ZI</span>
+            <div>
+                <h2 id="bm-home-intro-title">Mai mult loc pentru ideile tale.</h2>
+                <p>Descoperă produse pentru birou, școală, organizare și proiecte creative.</p>
+            </div>
+            <a class="bm-home-intro-link" href="#bm-home-categories">Descoperă categoriile <span aria-hidden="true">&rarr;</span></a>
+        </section>
+        @if (!replaceDefaultHomepageText)
+        {
+            @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "HomepageText" })
+        }
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeCategories })
         @await Component.InvokeAsync(typeof(HomepageCategoriesViewComponent))
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeProducts })

@@ -4,8 +4,15 @@
 
 @if (Model.Count > 0)
 {
-    <div class="category-grid home-page-category-grid">
-        <div class="item-grid">
+    <section class="category-grid home-page-category-grid" id="bm-home-categories" aria-labelledby="bm-home-categories-title">
+        <div class="bm-section-heading">
+            <div><span class="bm-eyebrow">LUCREAZĂ. CREEAZĂ. REPETĂ.</span><h2 id="bm-home-categories-title">@T("Categories")</h2><span class="bm-category-count">(@Model.Count)</span></div>
+            <div class="bm-rail-controls">
+                <button type="button" data-category-scroll="-1" aria-label="@T("Pager.Previous")" aria-controls="bm-category-rail" disabled><span aria-hidden="true">&larr;</span></button>
+                <button type="button" data-category-scroll="1" aria-label="@T("Pager.Next")" aria-controls="bm-category-rail"><span aria-hidden="true">&rarr;</span></button>
+            </div>
+        </div>
+        <div class="item-grid" id="bm-category-rail" tabindex="0" role="region" aria-labelledby="bm-home-categories-title">
             @foreach (var item in Model)
             {
                 <div class="item-box">
@@ -17,12 +24,47 @@
                         </h2>
                         <div class="picture">
                             <a href="@(Url.RouteUrl<Category>(new { SeName = item.SeName }))" title="@item.PictureModel.Title">
-                                <img alt="@item.PictureModel.AlternateText" src="@item.PictureModel.ImageUrl" title="@item.PictureModel.Title" />
+                                <img alt="@item.PictureModel.AlternateText" src="@item.PictureModel.ImageUrl" title="@item.PictureModel.Title" loading="lazy" width="450" height="450" />
                             </a>
                         </div>
                     </div>
                 </div>
             }
         </div>
+    </section>
+    <div class="bm-collection-stories">
+        @foreach (var item in Model.Skip(1).Take(2))
+        {
+            <a class="bm-collection-story" href="@(Url.RouteUrl<Category>(new { SeName = item.SeName }))">
+                <div><span class="bm-eyebrow">BIROMARKET / @T("Categories")</span><h2>@item.Name</h2><span class="bm-story-link">@T("Categories") <span aria-hidden="true">&rarr;</span></span></div>
+                <img src="@item.PictureModel.ImageUrl" alt="" loading="lazy" width="450" height="450" />
+            </a>
+        }
     </div>
+    <script asp-location="Footer">
+        $(function () {
+            var rail = document.getElementById('bm-category-rail');
+            var controls = document.querySelectorAll('[data-category-scroll]');
+            function updateControls() {
+                var position = Math.abs(rail.scrollLeft);
+                controls.forEach(function (button) {
+                    button.disabled = Number(button.dataset.categoryScroll) < 0
+                        ? position < 2
+                        : position + rail.clientWidth >= rail.scrollWidth - 2;
+                });
+            }
+            controls.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var direction = getComputedStyle(rail).direction === 'rtl' ? -1 : 1;
+                    rail.scrollBy({
+                        left: Number(button.dataset.categoryScroll) * direction * rail.clientWidth * 0.85,
+                        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+                    });
+                });
+            });
+            rail.addEventListener('scroll', updateControls, { passive: true });
+            new ResizeObserver(updateControls).observe(rail);
+            updateControls();
+        });
+    </script>
 }

@@ -1,0 +1,154 @@
+@model HeaderLinksModel
+@using Nop.Core.Domain.Customers
+@inject Nop.Core.IWebHelper webHelper
+
+<div class="header-links">
+    <ul>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderLinksBefore, additionalData = Model })
+        <li>
+            <details class="bm-account">
+                <summary aria-label="@T("Account.MyAccount")">
+                    <svg class="bm-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.5" /><path d="M5 21v-3a7 7 0 0 1 14 0v3" /></svg>
+                    <span>@T("Account.MyAccount")</span><span class="bm-chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="bm-account-menu">
+                    @if (Model.IsAuthenticated)
+                    {
+                        <a href="@Url.RouteUrl("CustomerInfo")">@T("Account.MyAccount")</a>
+                        <a href="@Url.RouteUrl("CustomerOrders")">@T("Account.CustomerOrders")</a>
+                        <a href="@Url.RouteUrl("CustomerAddresses")">@T("Account.CustomerAddresses")</a>
+                        <a href="@Url.RouteUrl("Logout")" class="ico-logout">@T("Account.Logout")</a>
+                    }
+                    else
+                    {
+                        var returnUrl = Context.Request.Query.TryGetValue("returnUrl", out var url) && !StringValues.IsNullOrEmpty(url)
+                            ? url.ToString()
+                            : webHelper.GetRawUrl(Context.Request);
+                        <a href="@Url.RouteUrl("Login", new { returnUrl })" class="ico-login">@T("Account.Login")</a>
+                        @if (Model.RegistrationType != UserRegistrationType.Disabled)
+                        {
+                            <a href="@Url.RouteUrl("Register", new { returnUrl })" class="ico-register">@T("Account.Register")</a>
+                        }
+                    }
+                </div>
+            </details>
+        </li>
+        @if (Model.AllowPrivateMessages)
+        {
+            <li><a href="@Url.RouteUrl("PrivateMessages", new { tab = "" })" class="ico-inbox"><span class="inbox-label">@T("PrivateMessages.Inbox")</span> <span class="inbox-unread">@Model.UnreadPrivateMessages</span></a></li>
+        }
+        @if (Model.WishlistEnabled)
+        {
+            <li>
+                <a href="@Url.RouteUrl("Wishlist")" class="ico-wishlist bm-action-link">
+                    <svg class="bm-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m12 21-8.5-8.5a5.5 5.5 0 0 1 7.8-7.8l.7.7.7-.7a5.5 5.5 0 0 1 7.8 7.8L12 21Z" /></svg>
+                    <span class="wishlist-label">@T("Wishlist")</span><span class="wishlist-qty">@T("Wishlist.HeaderQuantity", Model.WishlistItems)</span>
+                </a>
+            </li>
+        }
+        @if (Model.ShoppingCartEnabled)
+        {
+            <li id="topcartlink">
+                <a href="@Url.RouteUrl("ShoppingCart")" class="ico-cart bm-action-link" aria-controls="flyout-cart" aria-expanded="false">
+                    <svg class="bm-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M5 7h14l1 14H4L5 7Z" /><path d="M8 8V6a4 4 0 0 1 8 0v2" /></svg>
+                    <span class="cart-label">@T("ShoppingCart")</span><span class="cart-qty">@T("ShoppingCart.HeaderQuantity", Model.ShoppingCartItems)</span>
+                </a>
+            </li>
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderLinksAfter, additionalData = Model })
+    </ul>
+    @if (Model.AllowPrivateMessages && !string.IsNullOrEmpty(Model.AlertMessage))
+    {
+        <script asp-location="Footer">
+            $(function () {
+                displayPopupNotification('@Html.Raw(JavaScriptEncoder.Default.Encode(Model.AlertMessage))', 'success', false);
+            });
+        </script>
+    }
+</div>
+<script asp-location="Footer">
+    $(function () {
+        var account = document.querySelector('.bm-account');
+        if (account) {
+            document.addEventListener('click', function (event) {
+                if (!account.contains(event.target)) {
+                    account.open = false;
+                }
+            });
+            account.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    account.open = false;
+                    account.querySelector('summary').focus();
+                }
+            });
+            account.addEventListener('focusout', function (event) {
+                if (event.relatedTarget && !account.contains(event.relatedTarget)) {
+                    account.open = false;
+                }
+            });
+        }
+        var closeMiniCart = function (restoreFocus) {
+            var $cart = $('#flyout-cart');
+            if (!$cart.hasClass('active')) {
+                return;
+            }
+
+            $cart.removeClass('active').attr('aria-hidden', 'true');
+            $('body').removeClass('bm-cart-open');
+            $('#topcartlink a[aria-controls="flyout-cart"]').attr('aria-expanded', 'false');
+            if (restoreFocus) {
+                $('#topcartlink a[aria-controls="flyout-cart"]').trigger('focus');
+            }
+        };
+
+        var openMiniCart = function () {
+            var $cart = $('#flyout-cart');
+            $cart.addClass('active').attr('aria-hidden', 'false');
+            $('body').addClass('bm-cart-open');
+            $('#topcartlink a[aria-controls="flyout-cart"]').attr('aria-expanded', 'true');
+            $cart.find('.flyout-cart-close').trigger('focus');
+        };
+
+        $(document).on('click.bmMiniCart', '#topcartlink a[aria-controls="flyout-cart"]', function (event) {
+            event.preventDefault();
+            if ($('#flyout-cart').hasClass('active')) {
+                closeMiniCart(false);
+            } else {
+                openMiniCart();
+            }
+        }).on('click.bmMiniCart', '#flyout-cart .flyout-cart-close, #flyout-cart .flyout-cart-backdrop', function () {
+            closeMiniCart(true);
+        }).on('click.bmMiniCart', function (event) {
+            if ($('#flyout-cart').hasClass('active') && !$(event.target).closest('#flyout-cart, #topcartlink').length) {
+                closeMiniCart(false);
+            }
+        }).on('keydown.bmMiniCart', function (event) {
+            var $cart = $('#flyout-cart');
+            if (!$cart.hasClass('active')) {
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                closeMiniCart(true);
+                return;
+            }
+
+            if (event.key !== 'Tab') {
+                return;
+            }
+
+            var $focusable = $cart.find('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])').filter(':visible');
+            var first = $focusable[0];
+            var last = $focusable[$focusable.length - 1];
+            if (!first) {
+                event.preventDefault();
+            } else if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+    });
+</script>

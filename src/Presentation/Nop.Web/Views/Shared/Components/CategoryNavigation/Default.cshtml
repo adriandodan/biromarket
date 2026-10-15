@@ -24,40 +24,43 @@
 
     async Task CategoryLine(CategoryNavigationModel.CategoryLineModel lineModel)
     {
-        var active = lineModel.Category.Id == lineModel.CurrentCategoryId || lineModel.Category.SubCategories.Count(BreadCrumbContainsCurrentCategoryId) > 0;
+        var active = BreadCrumbContainsCurrentCategoryId(lineModel.Category);
         var last = lineModel.Category.Id == lineModel.CurrentCategoryId;
         var liClass = active ? "active" : "inactive";
+        var sublistId = $"category-sublist-{lineModel.Category.Id}";
         if (last)
         {
             liClass += " last";
         }
 
         <li class="@liClass">
-            <a href="@(Url.RouteUrl<Category>(new { SeName = lineModel.Category.SeName }))">@lineModel.Category.Name
+            <a href="@(Url.RouteUrl<Category>(new { SeName = lineModel.Category.SeName }))" aria-current="@(last ? "page" : null)">
+                <span class="category-name">@lineModel.Category.Name</span>
                 @if (lineModel.Category.NumberOfProducts.HasValue)
                 {
-                    <text> </text>@T("Categories.TotalProducts", lineModel.Category.NumberOfProducts.Value)
+                    <span class="category-count">@T("Categories.TotalProducts", lineModel.Category.NumberOfProducts.Value)</span>
                 }
             </a>
-            @{
-                if (lineModel.Category.Id == lineModel.CurrentCategoryId ||
-                    lineModel.Category.SubCategories.Count(BreadCrumbContainsCurrentCategoryId) > 0)
-                {
-                    if (lineModel.Category.SubCategories.Count > 0)
+            @if (lineModel.Category.SubCategories.Count > 0)
+            {
+                <button type="button"
+                        class="category-toggle"
+                        aria-expanded="@(active ? "true" : "false")"
+                        aria-controls="@sublistId"
+                        aria-label="@T("Categories") - @lineModel.Category.Name">
+                    <span class="category-toggle-icon" aria-hidden="true"></span>
+                </button>
+                <ul id="@sublistId" class="sublist" hidden="@(active ? null : "hidden")">
+                    @foreach (var subCategory in lineModel.Category.SubCategories)
                     {
-                        <ul class="sublist">
-                            @foreach (var subCategory in lineModel.Category.SubCategories)
-                            {
-                                var categoryLineModel = new CategoryNavigationModel.CategoryLineModel
-                                {
-                                    CurrentCategoryId = lineModel.CurrentCategoryId,
-                                    Category = subCategory
-                                };
-                                await CategoryLine(categoryLineModel);
-                            }
-                        </ul>
+                        var categoryLineModel = new CategoryNavigationModel.CategoryLineModel
+                        {
+                            CurrentCategoryId = lineModel.CurrentCategoryId,
+                            Category = subCategory
+                        };
+                        await CategoryLine(categoryLineModel);
                     }
-                }
+                </ul>
             }
         </li>
     }
@@ -83,4 +86,16 @@
             </ul>
         </div>
     </div>
+    <script asp-location="Footer">
+        $(function () {
+            $(document)
+                .off('click.bmCategoryNavigation', '.block-category-navigation .category-toggle')
+                .on('click.bmCategoryNavigation', '.block-category-navigation .category-toggle', function () {
+                    var $toggle = $(this);
+                    var expanded = $toggle.attr('aria-expanded') === 'true';
+                    $toggle.attr('aria-expanded', String(!expanded));
+                    $toggle.siblings('.sublist').first().prop('hidden', expanded);
+                });
+        });
+    </script>
 }

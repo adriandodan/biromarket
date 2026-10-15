@@ -1,0 +1,43 @@
+@{
+    Layout = "_ColumnsOne";
+    NopHtml.AddTitleParts("Despre Biromarket");
+    NopHtml.AddMetaDescriptionParts("Descoperă Biromarket, locul unde găsești produse pentru birou, școală, organizare și proiecte creative.");
+    NopHtml.AppendPageCssClassParts("html-bm-marketing-page");
+}
+
+<div class="bm-marketing-page">
+    <section class="bm-marketing-hero">
+        <span class="bm-marketing-eyebrow">BIROMARKET / DESPRE NOI</span>
+        <h1>Ideile bune încep cu lucrurile potrivite.</h1>
+        <p>Biromarket aduce laolaltă produse pentru birou, școală, organizare și proiecte creative — ca să găsești mai ușor inspirația și instrumentele de care ai nevoie.</p>
+        <a class="bm-marketing-button" href="@Url.RouteUrl("BiromarketProducts")">Descoperă produsele <span aria-hidden="true">&rarr;</span></a>
+    </section>
+
+    <section class="bm-marketing-section" aria-labelledby="bm-about-values">
+        <div class="bm-marketing-section-heading">
+            <span class="bm-marketing-eyebrow">UN MAGAZIN PENTRU IDEILE TALE</span>
+            <h2 id="bm-about-values">Lucruri utile. Idei fără limite.</h2>
+            <p>Fie că pregătești un spațiu de lucru, cauți rechizite sau ai început un proiect nou, poți explora produsele și colecțiile disponibile într-un singur loc.</p>
+        </div>
+        <div class="bm-marketing-cards">
+            <a class="bm-marketing-card" href="@Url.RouteUrl("BiromarketProducts")">
+                <span class="bm-marketing-card-index">01</span>
+                <h3>Produse pentru fiecare zi</h3>
+                <p>Descoperă articole pentru activitățile de la birou, de la școală și de acasă.</p>
+                <span class="bm-marketing-card-link">Explorează produsele <b aria-hidden="true">&nearr;</b></span>
+            </a>
+            <a class="bm-marketing-card" href="@Url.RouteUrl("BiromarketCategories")">
+                <span class="bm-marketing-card-index">02</span>
+                <h3>Categorii ușor de explorat</h3>
+                <p>Răsfoiește colecțiile magazinului și găsește rapid ce se potrivește proiectului tău.</p>
+                <span class="bm-marketing-card-link">Vezi categoriile <b aria-hidden="true">&nearr;</b></span>
+            </a>
+            <a class="bm-marketing-card" href="@Url.RouteUrl("BiromarketBrands")">
+                <span class="bm-marketing-card-index">03</span>
+                <h3>Branduri de descoperit</h3>
+                <p>Află ce branduri sunt disponibile și explorează produsele lor.</p>
+                <span class="bm-marketing-card-link">Descoperă brandurile <b aria-hidden="true">&nearr;</b></span>
+            </a>
+        </div>
+    </section>
+</div>

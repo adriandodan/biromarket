@@ -1,0 +1,24 @@
+@{
+    Layout = "_ColumnsOne";
+    NopHtml.AddTitleParts("Categorii");
+    NopHtml.AddMetaDescriptionParts("Răsfoiește categoriile Biromarket și găsește produse pentru birou, școală, organizare și creație.");
+    NopHtml.AppendPageCssClassParts("html-bm-marketing-page");
+}
+
+<div class="bm-marketing-page">
+    <section class="bm-marketing-hero bm-marketing-hero-compact">
+        <span class="bm-marketing-eyebrow">BIROMARKET / CATEGORII</span>
+        <h1>Explorează după ce ai nevoie.</h1>
+        <p>Organizăm catalogul în categorii ca să poți descoperi mai ușor produse pentru muncă, învățare și proiectele tale.</p>
+        <a class="bm-marketing-button" href="@Url.RouteUrl("ProductSearch")">Caută în catalog <span aria-hidden="true">&rarr;</span></a>
+    </section>
+
+    <section class="bm-marketing-section bm-marketing-catalog-section" aria-labelledby="bm-categories-heading">
+        <div class="bm-marketing-section-heading">
+            <span class="bm-marketing-eyebrow">RĂSFOIEȘTE COLECȚIILE</span>
+            <h2 id="bm-categories-heading">Categorii pentru fiecare idee.</h2>
+            <p>Alege o categorie pentru a vedea produsele disponibile.</p>
+        </div>
+        @await Component.InvokeAsync(typeof(HomepageCategoriesViewComponent))
+    </section>
+</div>

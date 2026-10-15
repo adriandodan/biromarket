@@ -6,8 +6,36 @@
 
 @inject IWorkContext workContext
 
-<div class="footer">
+<footer class="footer bm-footer">
+    <div class="bm-footer-shortcuts">
+        @if (Model.NewProductsEnabled && Model.DisplayNewProductsFooterItem)
+        {
+            <a href="@Url.RouteUrl("NewProducts")"><span class="bm-shortcut-icon" aria-hidden="true">+</span>@T("Products.NewProducts")<span class="bm-shortcut-arrow" aria-hidden="true">&nearr;</span></a>
+        }
+        @if (Model.DisplayCustomerOrdersFooterItem)
+        {
+            <a href="@Url.RouteUrl("CustomerOrders")"><span class="bm-shortcut-icon" aria-hidden="true">&#9633;</span>@T("Account.CustomerOrders")<span class="bm-shortcut-arrow" aria-hidden="true">&nearr;</span></a>
+        }
+        @if (Model.DisplayContactUsFooterItem)
+        {
+            <a href="@Url.RouteUrl("ContactUs")"><span class="bm-shortcut-icon" aria-hidden="true">?</span>@T("ContactUs")<span class="bm-shortcut-arrow" aria-hidden="true">&nearr;</span></a>
+        }
+    </div>
+    <div class="bm-newsletter-panel">
+        <span class="bm-newsletter-art" aria-hidden="true">@@</span>
+        @await Component.InvokeAsync(typeof(NewsletterBoxViewComponent))
+    </div>
     <div class="footer-upper">
+        <div class="bm-footer-brand">
+            <a class="bm-brand" href="@Url.RouteUrl("Homepage")" aria-label="Biromarket">
+                <span class="bm-brand-name">biro<span>market</span><span class="bm-brand-dot">.</span></span>
+            </a>
+            <p>@Model.StoreName</p>
+            <div class="social">
+                <h2 class="title">@T("Footer.FollowUs")</h2>
+                @await Component.InvokeAsync(typeof(SocialButtonsViewComponent))
+            </div>
+        </div>
         <div class="footer-block information">
             <div class="title">
                 <strong>@T("Footer.Information")</strong>
@@ -105,18 +133,9 @@
                 }
             </ul>
         </div>
-        <div class="footer-block follow-us">
-            <div class="social">
-                <div class="title">
-                    <strong>@T("Footer.FollowUs")</strong>
-                </div>
-                @await Component.InvokeAsync(typeof(SocialButtonsViewComponent))
-            </div>
-            @await Component.InvokeAsync(typeof(NewsletterBoxViewComponent))
-        </div>
         <div class="footer-images">
-            <img src="~/images/uploaded/anpc-sal.svg" alt="ANPC Soluționare" />
-            <img src="~/images/uploaded/anpc-sol.svg" alt="Soluționare online" />
+            <a href="https://anpc.ro/" target="_blank" rel="noopener noreferrer">ANPC <span aria-hidden="true">&nearr;</span></a>
+            <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer">ANPC &middot; SAL <span aria-hidden="true">&nearr;</span></a>
         </div>
         
     </div>
@@ -142,22 +161,8 @@
         @await Component.InvokeAsync(typeof(StoreThemeSelectorViewComponent))
     </div>
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.Footer, additionalData = Model })
-</div>
-<script asp-location="Footer">
-    $(function() {
-        $('.footer-block .title').on('click', function () {
-            var e = window, a = 'inner';
-            if (!('innerWidth' in window)) {
-                a = 'client';
-                e = document.documentElement || document.body;
-            }
-            var result = { width: e[a + 'Width'], height: e[a + 'Height'] };
-            if (result.width < 769) {
-                $(this).siblings('.list').slideToggle('slow');
-            }
-        });
-    });
-</script>
+    <div class="bm-footer-signature" aria-hidden="true">biro<span>market</span><b>.</b></div>
+</footer>
 <script asp-location="Footer">
     $(function() {
         $('.block .title').on('click', function () {
@@ -173,29 +178,3 @@
         });
     });
 </script>
-<style>
-    .footer-upper {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px; /* spacing between footer blocks */
-    }
-
-    .footer-block.information {
-        flex: 1 1 200px; /* take available space with minimum width */
-        min-width: 200px;
-    }
-
-    .footer-images {
-        flex: 1 1 100%;
-        margin-top: 15px;
-        display: flex;
-        justify-content: flex-start; /* align left or center as you prefer */
-        gap: 10px;
-    }
-
-    .footer-images img {
-        max-height: 70px;
-        margin: 5px;
-    }
-
-</style>

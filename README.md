@@ -5,6 +5,49 @@
 
 ![nopCommerce demo](https://www.nopcommerce.com/images/github/responsive_devices_codeplex.png#v1)
 
+### Biromarket storefront ###
+
+The DefaultClean theme includes the orange Biromarket header, account and category
+dropdowns, newsletter/footer, category filtering, product cards, and product-detail
+styling. Theme overrides live in `src/Presentation/Nop.Web/Themes/DefaultClean/Views`;
+the `brand-*.css` files and catalog filter script are in that theme's `Content`
+directory. Shared content styles cover CMS, contact, blog/news, forms, checkout,
+account/order, forum, vendor, sitemap, and exceptional public pages. Existing
+catalog, product-option, pricing, and cart endpoints are reused.
+
+On narrow screens, filters start collapsed and can be opened with the keyboard or
+touch. Selected filters can be removed individually or cleared together. Product
+details retain shipping estimates, minimum-quantity notifications, image zoom,
+and links to details, specifications, and reviews when those sections are available.
+
+For local development, run `dotnet run --project src/Presentation/Nop.Web`.
+Use the HTTP URL in the launch profile if the store has SSL disabled. Generated
+image URLs honor the request protocol; enable SSL in store settings for HTTPS
+deployments. Restart the app after adding bundled stylesheets.
+
+The homepage uses catalog photography in a full-width campaign banner, an
+accessible, non-autoplay category rail, and collection panels. The original SVG
+desk illustration is retained as a fallback when no homepage categories exist;
+no external image service or reference-theme assets are used. The rail supports
+touch, keyboard scrolling, previous/next buttons, RTL, and reduced motion.
+Hero text can be translated through the `Biromarket.Hero.*` locale resources
+(including `Biromarket.Hero.Shop`), with Romanian defaults for existing installations. The navigation
+shows four departments and a keyboard-accessible More menu; when the catalog
+has a single umbrella category, its children become the department shortcuts.
+Translate `Biromarket.Navigation.More` to customize that label.
+Hover a desktop department to browse its subcategories, or use its adjacent
+dropdown button with touch or keyboard. Escape closes the submenu and returns
+focus to that button. The full Categories directory uses a vertical department
+list with contextual flyouts on desktop and expandable sections on mobile.
+Only one navigation panel is shown at a time. Translate
+`Biromarket.Navigation.Intro`, `Biromarket.Navigation.Description`, and
+`Biromarket.Navigation.Delivery` for the directory and delivery/returns links.
+The homepage replaces only nopCommerce's untouched default welcome boilerplate
+with a Romanian introduction; edited `HomepageText` topic content remains CMS-managed.
+
+Run the URL-helper regression tests with:
+`dotnet test src/Tests/Nop.Tests --filter FullyQualifiedName~WebHelperTests`.
+
 ### Key features ###
 
 * The product is being developed and supported by the professional team since 2008.

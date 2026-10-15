@@ -325,6 +325,28 @@ public partial class CatalogController : BasePublicController
         return View(model);
     }
 
+    public virtual async Task<IActionResult> Promotions()
+    {
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var products = await _productService.SearchProductsAsync(pageIndex: 0,
+            pageSize: 120,
+            storeId: store.Id,
+            visibleIndividuallyOnly: true,
+            orderBy: ProductSortingEnum.Position);
+        var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(products);
+        var discountedProducts = productModels
+            .Where(product => product.ProductPrice.OldPriceValue.HasValue
+                && product.ProductPrice.PriceValue.HasValue
+                && product.ProductPrice.OldPriceValue > product.ProductPrice.PriceValue)
+            .ToList();
+
+        return View(new CatalogProductsModel
+        {
+            Products = discountedProducts,
+            NoResultMessage = "Momentan nu sunt produse la reducere. Revino curând pentru oferte noi."
+        });
+    }
+
     //ignore SEO friendly URLs checks
     [CheckLanguageSeoCode(ignore: true)]
     public virtual async Task<IActionResult> GetNewProducts(CatalogProductsCommand command)

@@ -1,0 +1,35 @@
+@model CatalogProductsModel
+
+@if (!Model.PriceRangeFilter.Enabled && !Model.SpecificationFilter.Enabled && !Model.ManufacturerFilter.Enabled)
+{
+    return;
+}
+
+<div class="block product-filters bm-filters">
+    <details class="bm-filter-panel" open>
+        <summary>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" /><circle cx="15" cy="17" r="3" /></svg>
+            @T("Search.AdvancedSearch")
+            <span class="bm-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="bm-filter-panel-body">
+            <div class="bm-filter-actions">
+                <button type="button" class="bm-clear-filters" hidden>@T("Admin.Common.Clear") <span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="bm-active-filters" aria-live="polite" data-clear-label="@T("Admin.Common.Clear")" data-price-label="@T("Products.Price")"></div>
+            @if (Model.PriceRangeFilter.Enabled)
+            {
+                @await Html.PartialAsync("_FilterPriceBox", Model.PriceRangeFilter)
+            }
+            @if (Model.SpecificationFilter.Enabled)
+            {
+                @await Html.PartialAsync("_FilterSpecsBox", Model.SpecificationFilter)
+            }
+            @if (Model.ManufacturerFilter.Enabled)
+            {
+                @await Html.PartialAsync("_FilterManufacturerBox", Model.ManufacturerFilter)
+            }
+        </div>
+    </details>
+</div>
+<script src="~/Themes/DefaultClean/Content/js/brand-catalog.js" asp-location="Footer"></script>

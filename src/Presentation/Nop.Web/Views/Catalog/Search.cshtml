@@ -27,65 +27,102 @@
     @await Html.PartialAsync("_CatalogFilters", Model.CatalogProductsModel)
 }
 
-<div class="page search-page">
-    <div class="page-title">
-        <h1>@T("Search")</h1>
-    </div>
-    <div class="page-body">
-        <div class="search-input">
-            <form asp-route="ProductSearch" method="get">
-                <div class="fieldset">
-                    <div class="form-fields">
-                        <div class="basic-search">
-                            <div class="inputs">
-                                <label asp-for="q">@T("Search.SearchTerm"):</label>
-                                <input asp-for="q" class="search-text" />
-                            </div>
-                            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductSearchPageBasic, additionalData = Model })
-                            <div class="inputs reversed">
-                                <input asp-for="advs" />
-                                <label asp-for="advs">@T("Search.AdvancedSearch")</label>
+@section CatalogSearchTop {
+    <div class="catalog-search-top">
+        <div class="page search-page search-page-top">
+            <div class="page-title">
+                <h1>@T("Search")</h1>
+            </div>
+            <div class="page-body">
+                <div class="search-input">
+                    <form asp-route="ProductSearch" method="get">
+                        <div class="fieldset">
+                            <div class="form-fields">
+                                <div class="basic-search">
+                                    <div class="inputs">
+                                        <label asp-for="q">@T("Search.SearchTerm"):</label>
+                                        <input asp-for="q" class="search-text" />
+                                    </div>
+                                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductSearchPageBasic, additionalData = Model })
+                                    <div class="inputs reversed">
+                                        <input asp-for="advs" />
+                                        <label asp-for="advs">@T("Search.AdvancedSearch")</label>
+                                    </div>
+                                </div>
+                                <div class="advanced-search" id="advanced-search-block">
+                                    @if (Model.AvailableCategories.Count > 0)
+                                    {
+                                        <div class="inputs">
+                                            <label asp-for="cid">@T("Search.Category"):</label>
+                                            <select asp-for="cid" asp-items="Model.AvailableCategories"></select>
+                                        </div>
+                                        <div class="inputs reversed">
+                                            <input asp-for="isc" />
+                                            <label asp-for="isc">@T("Search.IncludeSubCategories")</label>
+                                        </div>
+                                    }
+                                    @if (Model.AvailableManufacturers.Count > 0)
+                                    {
+                                        <div class="inputs">
+                                            <label asp-for="mid">@T("Search.Manufacturer"):</label>
+                                            <select asp-for="mid" asp-items="Model.AvailableManufacturers"></select>
+                                        </div>
+                                    }
+                                    @if (Model.asv && Model.AvailableVendors.Count > 0)
+                                    {
+                                        <div class="inputs">
+                                            <label asp-for="vid">@T("Search.Vendor"):</label>
+                                            <select asp-for="vid" asp-items="Model.AvailableVendors"></select>
+                                        </div>
+                                    }
+                                    <div class="inputs reversed">
+                                        <input asp-for="sid" />
+                                        <label asp-for="sid">@T("Search.SearchInDescriptions")</label>
+                                    </div>
+                                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductSearchPageAdvanced, additionalData = Model })
+                                </div>
                             </div>
                         </div>
-                        <div class="advanced-search" id="advanced-search-block">
-                            @if (Model.AvailableCategories.Count > 0)
-                            {
-                                <div class="inputs">
-                                    <label asp-for="cid">@T("Search.Category"):</label>
-                                    <select asp-for="cid" asp-items="Model.AvailableCategories"></select>
-                                </div>
-                                <div class="inputs reversed">
-                                    <input asp-for="isc" />
-                                    <label asp-for="isc">@T("Search.IncludeSubCategories")</label>
-                                </div>
-                            }
-                            @if (Model.AvailableManufacturers.Count > 0)
-                            {
-                                <div class="inputs">
-                                    <label asp-for="mid">@T("Search.Manufacturer"):</label>
-                                    <select asp-for="mid" asp-items="Model.AvailableManufacturers"></select>
-                                </div>
-                            }
-                            @if (Model.asv && Model.AvailableVendors.Count > 0)
-                            {
-                                <div class="inputs">
-                                    <label asp-for="vid">@T("Search.Vendor"):</label>
-                                    <select asp-for="vid" asp-items="Model.AvailableVendors"></select>
-                                </div>
-                            }
-                            <div class="inputs reversed">
-                                <input asp-for="sid" />
-                                <label asp-for="sid">@T("Search.SearchInDescriptions")</label>
-                            </div>
-                            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductSearchPageAdvanced, additionalData = Model })
+                        <div class="buttons">
+                            <button type="submit" class="button-1 search-button">@T("Search.Button")</button>
                         </div>
-                    </div>
+                    </form>
                 </div>
-                <div class="buttons">
-                    <button type="submit" class="button-1 search-button">@T("Search.Button")</button>
-                </div>
-            </form>
+            </div>
         </div>
+    </div>
+}
+
+<div class="page search-page search-page-results">
+    <div class="page-body">
+        @{
+            var searchCategoryCards = Model.AvailableCategories
+                .Where(category => category.Value != "0" &&
+                                   (category.Text?.Split(" >> ", StringSplitOptions.None).Length ?? 0) == 2)
+                .Take(6)
+                .ToList();
+        }
+        @if (string.IsNullOrWhiteSpace(Model.q) && Model.cid == 0 && searchCategoryCards.Count > 0)
+        {
+            <section class="bm-search-discovery" aria-labelledby="bm-search-discovery-title">
+                <div class="bm-search-discovery-heading">
+                    <span class="bm-eyebrow">@T("Categories")</span>
+                    <h2 id="bm-search-discovery-title">Browse popular categories</h2>
+                    <p>Choose a department to browse its products, or use the search above to find something specific.</p>
+                </div>
+                <div class="bm-search-category-grid">
+                    @foreach (var category in searchCategoryCards)
+                    {
+                        var categoryName = category.Text?.Split(" >> ", StringSplitOptions.None).LastOrDefault() ?? category.Text;
+                        <a class="bm-search-category-card"
+                           href="@Url.RouteUrl("ProductSearch", new { cid = category.Value, advs = true, isc = true })">
+                            <span>@categoryName</span>
+                            <span class="bm-search-category-arrow" aria-hidden="true">&rarr;</span>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
         @await Html.PartialAsync("_CatalogSelectors", Model.CatalogProductsModel)
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductSearchPageBeforeResults, additionalData = Model })
         <div class="search-results">

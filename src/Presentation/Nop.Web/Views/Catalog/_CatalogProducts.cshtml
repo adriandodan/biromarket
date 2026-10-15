@@ -3,6 +3,10 @@
 <script src="~/js/public.catalogproducts.js" asp-location="Footer"></script>
 
 <div class="products-container">
+    <div class="bm-catalog-status" role="status">
+        <span class="bm-catalog-loading" hidden>@T("Common.Wait")</span>
+        <span class="bm-catalog-error" hidden>@T("Common.Error")</span>
+    </div>
     <div class="ajax-products-busy"></div>
     <div class="products-wrapper">
         @await Html.PartialAsync("_ProductsInGridOrLines", Model)
@@ -19,6 +23,16 @@
         addPagerHandlers();
         $(CatalogProducts).on('loaded', function () {
             addPagerHandlers();
+            $('.products-container').attr('aria-busy', 'false');
+            $('.bm-catalog-loading').prop('hidden', true);
+        }).on('before', function () {
+            $('.products-container').attr('aria-busy', 'true');
+            $('.bm-catalog-loading').prop('hidden', false);
+            $('.bm-catalog-error').prop('hidden', true);
+        }).on('error', function () {
+            $('.products-container').attr('aria-busy', 'false');
+            $('.bm-catalog-loading').prop('hidden', true);
+            $('.bm-catalog-error').prop('hidden', false);
         });
     });
 

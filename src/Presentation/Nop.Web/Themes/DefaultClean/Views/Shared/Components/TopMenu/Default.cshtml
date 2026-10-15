@@ -1,0 +1,230 @@
+@model TopMenuModel
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Topics
+@using Nop.Core
+@using Nop.Services.Localization
+@inject ILocalizationService localizationService
+@inject IWorkContext workContext
+@{
+    var menuCategories = Model.Categories.Where(x => x.IncludeInTopMenu).ToList();
+    var departmentCategories = menuCategories.Count == 1 && menuCategories[0].SubCategories.Any()
+        ? menuCategories[0].SubCategories.ToList()
+        : menuCategories;
+    var currentAction = Url.ActionContext.RouteData.Values["action"]?.ToString();
+}
+
+@functions {
+    async Task CategoryLinks(CategorySimpleModel category)
+    {
+        <li>
+            <a href="@(Url.RouteUrl<Category>(new { SeName = category.SeName }))">@category.Name</a>
+            @if (category.SubCategories.Any())
+            {
+                <ul>
+                    @foreach (var child in category.SubCategories)
+                    {
+                        await CategoryLinks(child);
+                    }
+                </ul>
+            }
+        </li>
+    }
+}
+
+@if (Model.UseAjaxMenu)
+{
+    @await Html.PartialAsync("~/Views/Shared/Components/TopMenu/Default.cshtml", Model)
+}
+else
+{
+    <nav class="bm-navigation" aria-label="@T("Menu")">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderMenuBefore, additionalData = Model })
+        <details class="bm-categories">
+            <summary>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><rect x="3" y="3" width="6" height="6" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /><rect x="3" y="15" width="6" height="6" rx="1" /><rect x="15" y="15" width="6" height="6" rx="1" /></svg>
+                @T("Categories")<span class="bm-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="bm-mega-panel">
+                <ul class="bm-directory-list">
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MobHeaderMenuBefore, additionalData = Model })
+                    @foreach (var category in departmentCategories)
+                    {
+                        <li class="bm-department bm-directory-item">
+                            <a href="@(Url.RouteUrl<Category>(new { SeName = category.SeName }))">@category.Name</a>
+                            @if (category.SubCategories.Any())
+                            {
+                                <button type="button" class="bm-department-toggle" aria-label="@category.Name - @T("Categories")" aria-expanded="false" aria-controls="bm-directory-@category.Id"><span class="bm-chevron" aria-hidden="true"></span></button>
+                                <div class="bm-department-panel" id="bm-directory-@category.Id" hidden>
+                                    <div class="bm-mega-heading"><strong>@category.Name</strong><a href="@(Url.RouteUrl<Category>(new { SeName = category.SeName }))">@T("Categories") <span aria-hidden="true">&rarr;</span></a></div>
+                                    <ul class="bm-category-grid">
+                                        @foreach (var subCategory in category.SubCategories)
+                                        {
+                                            await CategoryLinks(subCategory);
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </li>
+                    }
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.MobHeaderMenuAfter, additionalData = Model })
+                </ul>
+                <div class="bm-directory-intro">
+                    <span class="bm-eyebrow">BIROMARKET</span>
+                    <strong>@await localizationService.GetResourceAsync("Biromarket.Navigation.Intro", (await workContext.GetWorkingLanguageAsync()).Id, defaultValue: "Un loc pentru fiecare idee.")</strong>
+                    <p>@await localizationService.GetResourceAsync("Biromarket.Navigation.Description", (await workContext.GetWorkingLanguageAsync()).Id, defaultValue: "Explorează departamentele și găsește tot ce ai nevoie pentru următorul tău proiect.")</p>
+                    <a class="bm-primary-link" href="@Url.RouteUrl("ProductSearch")">@T("Search") <span aria-hidden="true">&rarr;</span></a>
+                </div>
+            </div>
+        </details>
+        <ul class="bm-menu-links">
+            @if (Model.DisplayHomepageMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("Homepage")">@T("Homepage")</a></li>
+            }
+            <li class="bm-promo-menu-item"><a href="@Url.Content("~/promotions/")"><span aria-hidden="true">%</span>&nbsp;Promotii</a></li>
+            <li><a href="@Url.RouteUrl("BiromarketAbout")" aria-current="@(currentAction == "About" ? "page" : null)">Despre noi</a></li>
+            <li><a href="@Url.RouteUrl("BiromarketProducts")" aria-current="@(currentAction == "Products" ? "page" : null)">Produse</a></li>
+            <li><a href="@Url.RouteUrl("BiromarketCategories")" aria-current="@(currentAction == "Categories" ? "page" : null)">Categorii</a></li>
+            <li><a href="@Url.RouteUrl("BiromarketBrands")" aria-current="@(currentAction == "Brands" ? "page" : null)">Branduri</a></li>
+            @await Component.InvokeAsync(typeof(PopularProductTagsViewComponent), new { viewName = "Header" })
+            @foreach (var topic in Model.Topics)
+            {
+                <li><a href="@(Url.RouteUrl<Topic>(new { SeName = topic.SeName }))">@topic.Name</a></li>
+            }
+            @if (Model.NewProductsEnabled && Model.DisplayNewProductsMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("NewProducts")">@T("Products.NewProducts")</a></li>
+            }
+            @if (Model.DisplayProductSearchMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("ProductSearch")">@T("Search")</a></li>
+            }
+            @if (Model.DisplayCustomerInfoMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("CustomerInfo")">@T("Account.MyAccount")</a></li>
+            }
+            @if (Model.BlogEnabled && Model.DisplayBlogMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("Blog")">@T("Blog")</a></li>
+            }
+            @if (Model.ForumEnabled && Model.DisplayForumsMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("Boards")">@T("Forum.Forums")</a></li>
+            }
+            @if (Model.DisplayContactUsMenuItem)
+            {
+                <li><a href="@Url.RouteUrl("ContactUs")">@T("ContactUs")</a></li>
+            }
+        </ul>
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderMenuAfter, additionalData = Model })
+    </nav>
+    <script asp-location="Footer">
+        $(function () {
+            document.querySelectorAll('.bm-department').forEach(function (department) {
+                var toggle = department.querySelector('.bm-department-toggle');
+                var panel = department.querySelector('.bm-department-panel');
+                if (!toggle || !panel) {
+                    return;
+                }
+                function setOpen(open) {
+                    if (open) {
+                        document.querySelectorAll('.bm-categories, .bm-more-menu').forEach(function (menu) {
+                            if (!menu.contains(department)) {
+                                menu.open = false;
+                            }
+                        });
+                        document.querySelectorAll('.bm-department').forEach(function (other) {
+                            if (other !== department) {
+                                var otherToggle = other.querySelector('.bm-department-toggle');
+                                var otherPanel = other.querySelector('.bm-department-panel');
+                                if (otherToggle && otherPanel) {
+                                    otherToggle.setAttribute('aria-expanded', 'false');
+                                    otherPanel.hidden = true;
+                                }
+                            }
+                        });
+                    }
+                    toggle.setAttribute('aria-expanded', open.toString());
+                    panel.hidden = !open;
+                }
+                department.addEventListener('pointerenter', function () {
+                    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                        setOpen(true);
+                    }
+                });
+                department.addEventListener('pointerleave', function () {
+                    if (!department.contains(document.activeElement)) {
+                        setOpen(false);
+                    }
+                });
+                toggle.addEventListener('click', function () {
+                    setOpen(panel.hidden);
+                });
+                department.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        setOpen(false);
+                        toggle.focus();
+                    }
+                });
+                department.addEventListener('focusout', function (event) {
+                    if (!department.contains(event.relatedTarget)) {
+                        setOpen(false);
+                    }
+                });
+                document.addEventListener('click', function (event) {
+                    if (!department.contains(event.target)) {
+                        setOpen(false);
+                    }
+                });
+            });
+            document.querySelectorAll('.bm-categories, .bm-more-menu').forEach(function (menu) {
+                menu.addEventListener('toggle', function () {
+                    if (menu.open) {
+                        document.querySelectorAll('.bm-categories, .bm-more-menu').forEach(function (other) {
+                            if (other !== menu) {
+                                other.open = false;
+                            }
+                        });
+                    }
+                    document.querySelectorAll('.bm-department').forEach(function (department) {
+                        if ((menu.open && !menu.contains(department)) || (!menu.open && menu.contains(department))) {
+                            var toggle = department.querySelector('.bm-department-toggle');
+                            var panel = department.querySelector('.bm-department-panel');
+                            if (toggle && panel) {
+                                toggle.setAttribute('aria-expanded', 'false');
+                                panel.hidden = true;
+                            }
+                        }
+                    });
+                });
+                document.addEventListener('click', function (event) {
+                    if (!menu.contains(event.target)) {
+                        menu.open = false;
+                    }
+                });
+                menu.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        menu.open = false;
+                        menu.querySelector('summary').focus();
+                    }
+                });
+                menu.addEventListener('focusout', function (event) {
+                    if (event.relatedTarget && !menu.contains(event.relatedTarget)) {
+                        menu.open = false;
+                    }
+                });
+            });
+            var categories = document.querySelector('.bm-categories');
+            categories.addEventListener('pointerenter', function () {
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                    categories.open = true;
+                }
+            });
+            categories.addEventListener('pointerleave', function () {
+                if (!categories.contains(document.activeElement)) {
+                    categories.open = false;
+                }
+            });
+        });
+    </script>
+}
