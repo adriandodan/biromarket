@@ -328,13 +328,22 @@ public partial class CatalogController : BasePublicController
     public virtual async Task<IActionResult> Promotions()
     {
         var store = await _storeContext.GetCurrentStoreAsync();
-        var products = await _productService.SearchProductsAsync(pageIndex: 0,
-            pageSize: 120,
-            storeId: store.Id,
-            visibleIndividuallyOnly: true,
-            orderBy: ProductSortingEnum.Position);
+        var discountedProducts = await _productService.GetProductsWithAppliedDiscountAsync();
+        var products = new List<Product>();
+        foreach (var product in discountedProducts)
+        {
+            if (!product.Published
+                || !product.VisibleIndividually
+                || !_productService.ProductIsAvailable(product)
+                || !await _aclService.AuthorizeAsync(product)
+                || !await _storeMappingService.AuthorizeAsync(product, store.Id))
+                continue;
+
+            products.Add(product);
+        }
+
         var productModels = await _productModelFactory.PrepareProductOverviewModelsAsync(products);
-        var discountedProducts = productModels
+        var productsOnSale = productModels
             .Where(product => product.ProductPrice.OldPriceValue.HasValue
                 && product.ProductPrice.PriceValue.HasValue
                 && product.ProductPrice.OldPriceValue > product.ProductPrice.PriceValue)
@@ -342,7 +351,7 @@ public partial class CatalogController : BasePublicController
 
         return View(new CatalogProductsModel
         {
-            Products = discountedProducts,
+            Products = productsOnSale,
             NoResultMessage = "Momentan nu sunt produse la reducere. Revino curând pentru oferte noi."
         });
     }

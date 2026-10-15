@@ -387,16 +387,30 @@
 .html-return-request-list-page .return-request-list .return-request-item,
 .html-shipment-details-page .shipment-details,
 .html-reward-points-page .reward-points-overview { margin-bottom: 16px; border: 1px solid var(--bm-line); border-radius: 5px; background: #fff; padding: 20px; }
-.html-order-details-page .order-overview-content { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-top: 14px; }
+.html-order-details-page .page-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; border-bottom: 1px solid var(--bm-line); padding-bottom: 16px; }
+.html-order-details-page .page-title h1 { margin: 0; border: 0; padding: 0; font-size: clamp(24px, 3vw, 32px); }
+.html-order-details-page .page-title a { display: inline-flex; align-items: center; justify-content: center; min-width: 150px; min-height: 44px; margin: 0; border-radius: 3px; background: #a8a8a8; padding: 10px 18px; font-size: 14px; font-weight: 600; transition: background-color .18s ease, transform .18s ease; }
+.html-order-details-page .page-title a:hover { background: #888; transform: translateY(-1px); }
+.html-order-details-page .page-title a.print-order-button { background: var(--bm-orange); color: #492300; }
+.html-order-details-page .page-title a.print-order-button:hover { background: #ed7400; }
+.html-order-details-page .order-overview { margin-bottom: 18px; text-align: start; }
+.html-order-details-page .order-overview .order-number { margin-bottom: 0; color: var(--bm-ink); font-size: 18px; }
+.html-order-details-page .order-overview-content { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 26px; margin: 12px 0 0; padding: 0; list-style: none; }
 .html-order-details-page .order-overview-content li { color: var(--bm-muted); font-size: 13px; }
-.html-order-details-page .order-status { border-radius: 3px; background: #fff1e2; padding: 4px 8px; color: #8e4000; }
+.html-order-details-page .order-status { border-radius: 3px; background: #fff1e2; padding: 7px 10px; color: #8e4000; }
 .html-order-details-page .order-details-area,
 .html-order-details-page .shipping-info-wrap,
 .html-order-details-page .billing-info-wrap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.html-order-details-page .order-details-area > .billing-info-wrap,
+.html-order-details-page .order-details-area > .shipping-info-wrap { width: auto; max-width: none; margin: 0; background: transparent; padding: 0; color: inherit; }
 .html-order-details-page .billing-info-wrap,
 .html-order-details-page .shipping-info-wrap { margin-bottom: 18px; }
+.html-order-details-page .payment-method-info,
+.html-order-details-page .shipping-method-info { margin-top: 0; border: 1px solid var(--bm-line); border-radius: 5px; background: #fff; padding: 20px; }
 .html-order-details-page .title { margin-bottom: 12px; color: var(--bm-ink); font-weight: 650; }
-.html-order-details-page .info-list li { padding-block: 4px; color: #655548; font-size: 13px; }
+.html-order-details-page .info-list { margin: 0; padding: 0; list-style: none; }
+.html-order-details-page .info-list li { padding-block: 4px; color: #655548; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.html-order-details-page .info-list li.name { color: var(--bm-ink); font-weight: 650; }
 
 .html-forums-main-page .forums-table-section,
 .html-forum-page .forum-table,
@@ -858,6 +872,7 @@
   .html-contact-page .contact-page .page-body > form,
   .html-contact-page .contact-page .page-body > .result,
   .html-contact-page .contact-page .page-body > .message-error { grid-column: 1; grid-row: auto; }
+  .html-order-details-page .order-details-area { grid-template-columns: 1fr; }
   .html-vendor-page .vendor-grid,
   .html-vendor-list-page .vendor-grid,
   .html-manufacturer-list-page .manufacturer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -875,6 +890,9 @@
   .html-blogpost-page .new-comment { padding: 18px; }
   .html-checkout-page .opc .step { padding: 16px; }
   .html-checkout-page .opc .step-title { min-height: 54px; padding: 10px 12px; }
+  .html-order-details-page .page-title { justify-content: flex-start; }
+  .html-order-details-page .page-title h1 { flex-basis: 100%; }
+  .html-order-details-page .page-title a { flex: 1 1 140px; }
   .html-order-details-page .order-details-area,
   .html-order-details-page .shipping-info-wrap,
   .html-order-details-page .billing-info-wrap { grid-template-columns: 1fr; }

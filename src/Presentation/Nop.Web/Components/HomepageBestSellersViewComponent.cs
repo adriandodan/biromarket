@@ -42,19 +42,22 @@ public partial class HomepageBestSellersViewComponent : NopViewComponent
         _storeMappingService = storeMappingService;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync(int? productThumbPictureSize)
+    public async Task<IViewComponentResult> InvokeAsync(int? productThumbPictureSize = null, bool displayOnProductsPage = false)
     {
-        if (!_catalogSettings.ShowBestsellersOnHomepage || _catalogSettings.NumberOfBestsellersOnHomepage == 0)
+        const int productsPageBestsellersCount = 8;
+        var productsCount = displayOnProductsPage ? productsPageBestsellersCount : _catalogSettings.NumberOfBestsellersOnHomepage;
+
+        if (!displayOnProductsPage && !_catalogSettings.ShowBestsellersOnHomepage || productsCount == 0)
             return Content("");
 
         //load and cache report
         var store = await _storeContext.GetCurrentStoreAsync();
         var report = await _staticCacheManager.GetAsync(
             _staticCacheManager.PrepareKeyForDefaultCache(NopModelCacheDefaults.HomepageBestsellersIdsKey,
-                store),
+                store, productsCount),
             async () => await (await _orderReportService.BestSellersReportAsync(
                 storeId: store.Id,
-                pageSize: _catalogSettings.NumberOfBestsellersOnHomepage)).ToListAsync());
+                pageSize: productsCount)).ToListAsync());
 
         //load products
         var products = await (await _productService.GetProductsByIdsAsync(report.Select(x => x.ProductId).ToArray()))
@@ -68,6 +71,6 @@ public partial class HomepageBestSellersViewComponent : NopViewComponent
 
         //prepare model
         var model = (await _productModelFactory.PrepareProductOverviewModelsAsync(products, true, true, productThumbPictureSize)).ToList();
-        return View(model);
+        return displayOnProductsPage ? View("Carousel", model) : View(model);
     }
 }

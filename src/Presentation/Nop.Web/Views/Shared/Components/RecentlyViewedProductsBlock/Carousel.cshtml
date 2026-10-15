@@ -1,0 +1,9 @@
+﻿@model IList<ProductOverviewModel>
+@{
+    var carouselViewData = new ViewDataDictionary(ViewData)
+    {
+        ["CarouselTitle"] = T("Products.RecentlyViewedProducts"),
+        ["CarouselId"] = "bm-products-recently-viewed-title"
+    };
+}
+@await Html.PartialAsync("_ProductCarousel", Model, carouselViewData)

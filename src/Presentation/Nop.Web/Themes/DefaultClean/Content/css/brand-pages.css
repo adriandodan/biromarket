@@ -345,6 +345,15 @@ body { font-family: "Segoe UI", Arial, sans-serif; color: var(--bm-ink); }
 .bm-marketing-card-link b { font-size: 18px; font-weight: 400; }
 .bm-marketing-catalog-section .home-page-category-grid,
 .bm-marketing-catalog-section .products-block { width: 100%; margin-inline: 0; }
+.bm-products-carousels { display: grid; gap: 52px; margin: 0 0 68px; }
+.bm-product-carousel { min-width: 0; }
+.bm-product-carousel-heading { margin-bottom: 22px; }
+.bm-product-carousel-heading .bm-marketing-eyebrow { margin-bottom: 8px; }
+.bm-product-carousel-heading h2 { margin: 0; color: #a34d00; font-family: var(--bm-display); font-size: clamp(26px, 3vw, 36px); font-weight: 700; line-height: 1.1; text-transform: uppercase; }
+.bm-product-carousel .product-grid { margin: 0; }
+.bm-product-carousel .item-grid { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 60px) / 4); gap: 20px; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #e4b88f transparent; padding: 4px 2px 16px; }
+.bm-product-carousel .item-grid::after { display: none; }
+.bm-product-carousel .item-box { float: none; width: auto; margin: 0; scroll-snap-align: start; }
 .bm-marketing-bottom-link { display: flex; justify-content: center; margin-top: 32px; }
 .bm-brand-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .bm-brand-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 220px; overflow: hidden; border: 1px solid var(--bm-line); background: #fff; padding: 22px; color: var(--bm-ink); text-align: center; transition: border-color .2s, transform .2s; }
@@ -381,6 +390,8 @@ body { font-family: "Segoe UI", Arial, sans-serif; color: var(--bm-ink); }
   .bm-marketing-cards { grid-template-columns: 1fr; gap: 12px; }
   .bm-marketing-card { min-height: 220px; padding: 22px; }
   .bm-brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .bm-products-carousels { gap: 40px; margin-bottom: 48px; }
+  .bm-product-carousel .item-grid { grid-auto-columns: 78%; gap: 12px; }
   .bm-brand-card { min-height: 180px; padding: 16px; }
   .bm-brand-picture { height: 100px; }
   .bm-manufacturer-directory .bm-marketing-hero-compact { margin-bottom: 40px; padding-block: 48px; }

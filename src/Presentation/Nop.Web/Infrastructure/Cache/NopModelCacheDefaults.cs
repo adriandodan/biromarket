@@ -61,8 +61,9 @@ public static partial class NopModelCacheDefaults
     /// </summary>
     /// <remarks>
     /// {0} : current store ID
+    /// {1} : number of products
     /// </remarks>
-    public static CacheKey HomepageBestsellersIdsKey => new("Nop.pres.bestsellers.homepage-{0}", HomepageBestsellersIdsPrefixCacheKey);
+    public static CacheKey HomepageBestsellersIdsKey => new("Nop.pres.bestsellers.homepage-{0}-{1}", HomepageBestsellersIdsPrefixCacheKey);
     public static string HomepageBestsellersIdsPrefixCacheKey => "Nop.pres.bestsellers.homepage";
 
     /// <summary>
