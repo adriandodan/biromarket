@@ -72,21 +72,22 @@
             <div class="picture-thumbs">
                 @foreach (var picture in Model.PictureModels)
                 {
-                    <div class="thumb-item" data-pictureid="@picture.Id">
+                    <button type="button" class="thumb-item" data-pictureid="@picture.Id" aria-label="@picture.AlternateText">
                         <img src="@picture.ThumbImageUrl" alt="@picture.AlternateText" title="@picture.Title" data-defaultsize="@picture.ImageUrl" data-fullsize="@picture.FullSizeImageUrl" />
-                    </div>
+                    </button>
                 }
             </div>
             <script asp-location="Footer">
                 $(function() {
-                    $('.thumb-item img').on('click',
+                    $('.thumb-item').on('click',
                         function() {
-                            $('#main-product-img-@Model.Id').attr('src', $(this).attr('data-defaultsize'));
-                            $('#main-product-img-@Model.Id').attr('title', $(this).attr('title'));
-                            $('#main-product-img-@Model.Id').attr('alt', $(this).attr('alt'));
+                            var image = $(this).find('img');
+                            $('#main-product-img-@Model.Id').attr('src', image.attr('data-defaultsize'));
+                            $('#main-product-img-@Model.Id').attr('title', image.attr('title'));
+                            $('#main-product-img-@Model.Id').attr('alt', image.attr('alt'));
                             $('#main-product-img-lightbox-anchor-@Model.Id')
-                                .attr('href', $(this).attr('data-fullsize'));
-                            $('#main-product-img-lightbox-anchor-@Model.Id').attr('title', $(this).attr('title'));
+                                .attr('href', image.attr('data-fullsize'));
+                            $('#main-product-img-lightbox-anchor-@Model.Id').attr('title', image.attr('title'));
                         });
                 });
             </script>

@@ -53,6 +53,7 @@
     {
         <li><a href="@Url.RouteUrl("Homepage")">@T("Homepage")</a></li>
     }
+    <li class="bm-promo-menu-item"><a href="@Url.Content("~/promotions/")"><span aria-hidden="true">%</span> Promotii</a></li>
     @if (!Model.UseAjaxMenu)
     {
         var rootCategories = Model.Categories.Where(x => x.IncludeInTopMenu).ToList();
@@ -107,6 +108,7 @@
         {
             <li><a href="@Url.RouteUrl("Homepage")">@T("Homepage")</a></li>
         }
+        <li class="bm-promo-menu-item"><a href="@Url.Content("~/promotions/")"><span aria-hidden="true">%</span> Promotii</a></li>
         @if (!Model.UseAjaxMenu)
         {
             @foreach (var category in rootCategoriesResponsive)

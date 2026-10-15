@@ -260,9 +260,19 @@
         }
         else
         {
-            <div class="no-data">
-                @T("Wishlist.CartIsEmpty")
-            </div>
+            <section class="bm-empty-state bm-empty-wishlist" role="status" aria-labelledby="bm-empty-wishlist-title">
+                <span class="bm-empty-state-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M20.8 8.8c0 5.4-8.8 10.2-8.8 10.2S3.2 14.2 3.2 8.8A4.3 4.3 0 0 1 12 6.5a4.3 4.3 0 0 1 8.8 2.3Z" />
+                    </svg>
+                </span>
+                <span class="bm-empty-state-eyebrow">LISTA DE DORINȚE</span>
+                <h2 id="bm-empty-wishlist-title">Păstrează aici produsele care ți-au atras atenția.</h2>
+                <p>Salvează-ți favoritele și revino la ele oricând, înainte să alegi ce ți se potrivește.</p>
+                <a class="bm-empty-state-action" href="@Url.RouteUrl("Homepage")">
+                    Descoperă produsele <span aria-hidden="true">&rarr;</span>
+                </a>
+            </section>
         }
         @if (Model.IsEditable && Model.Items.Count > 0)
         {

@@ -1,0 +1,45 @@
+@model PopularProductTagsModel
+
+@using Nop.Core.Domain.Catalog
+
+@{
+    Layout = "_ColumnsOne";
+    NopHtml.AddTitleParts("Etichete de produs");
+    NopHtml.AddMetaDescriptionParts("Descoperă produsele Biromarket grupate după etichete.");
+    NopHtml.AppendPageCssClassParts("html-bm-marketing-page");
+    NopHtml.AppendPageCssClassParts("html-product-tags-all-page");
+}
+
+<div class="bm-marketing-page">
+    <section class="bm-marketing-hero bm-marketing-hero-compact">
+        <span class="bm-marketing-eyebrow">BIROMARKET / ETICHETE</span>
+        <h1>Găsește mai repede ce cauți.</h1>
+        <p>Explorează produsele după etichete și descoperă articole care au ceva în comun.</p>
+    </section>
+
+    <section class="bm-marketing-section" aria-labelledby="bm-tags-heading">
+        <div class="bm-marketing-section-heading">
+            <span class="bm-marketing-eyebrow">DESCOPERĂ PRODUSELE</span>
+            <h2 id="bm-tags-heading">Răsfoiește după etichetă.</h2>
+            <p>Alege o etichetă pentru a vedea produsele asociate.</p>
+        </div>
+        @if (Model.Tags.Count > 0)
+        {
+            <div class="bm-tag-grid">
+                @foreach (var tag in Model.Tags)
+                {
+                    <a class="bm-tag-card" href="@(Url.RouteUrl<ProductTag>(new { SeName = tag.SeName }))">
+                        <span class="bm-tag-label">ETICHETĂ</span>
+                        <strong>@tag.Name</strong>
+                        <span class="bm-tag-count">@tag.ProductCount @(tag.ProductCount == 1 ? "produs" : "produse")</span>
+                        <span class="bm-tag-arrow" aria-hidden="true">&nearr;</span>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="bm-brand-empty">Momentan nu sunt etichete disponibile. Revino în curând pentru noutăți.</p>
+        }
+    </section>
+</div>

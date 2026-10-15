@@ -33,7 +33,7 @@ public partial class RecentlyViewedProductsBlockViewComponent : NopViewComponent
         _storeMappingService = storeMappingService;
     }
 
-    public async Task<IViewComponentResult> InvokeAsync(int? productThumbPictureSize, bool? preparePriceModel)
+    public async Task<IViewComponentResult> InvokeAsync(int? productThumbPictureSize, bool? preparePriceModel, bool asCarousel = false)
     {
         if (!_catalogSettings.RecentlyViewedProductsEnabled)
             return Content("");
@@ -55,6 +55,6 @@ public partial class RecentlyViewedProductsBlockViewComponent : NopViewComponent
             preparePictureModel,
             productThumbPictureSize));
 
-        return View(model);
+        return asCarousel ? View("Carousel", model) : View(model);
     }
 }

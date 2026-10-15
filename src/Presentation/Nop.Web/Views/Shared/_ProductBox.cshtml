@@ -52,6 +52,13 @@
 }
 <div class="product-item" data-productid="@Model.Id">
     <div class="picture">
+        @if (Model.ProductPrice.OldPriceValue.HasValue
+            && Model.ProductPrice.PriceValue.HasValue
+            && Model.ProductPrice.OldPriceValue > Model.ProductPrice.PriceValue)
+        {
+            var savingsPercent = (int)Math.Round((Model.ProductPrice.OldPriceValue.Value - Model.ProductPrice.PriceValue.Value) * 100 / Model.ProductPrice.OldPriceValue.Value);
+            <span class="bm-sale-badge"><span>-@savingsPercent%</span></span>
+        }
         @if (Model.PictureModels.Count > 1)
         {
             <div class="swiper" id="swiper-@Model.Id" dir="@Html.GetUIDirection(!await Html.ShouldUseRtlThemeAsync())">
@@ -135,6 +142,10 @@
                     <span class="price old-price">@Model.ProductPrice.OldPrice</span>
                 }
                 <span class="price actual-price">@Model.ProductPrice.Price</span>
+                @if (!string.IsNullOrWhiteSpace(Model.ProductPrice.PromotionSavings))
+                {
+                    <span class="bm-promotion-savings">@Model.ProductPrice.PromotionSavings</span>
+                }
                 @if (Model.ProductPrice.DisplayTaxShippingInfo)
                 {
                     var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;

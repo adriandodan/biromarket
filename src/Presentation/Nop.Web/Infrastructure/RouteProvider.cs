@@ -30,6 +30,22 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"{lang}",
             defaults: new { controller = "Home", action = "Index" });
 
+        endpointRouteBuilder.MapControllerRoute(name: "BiromarketAbout",
+            pattern: $"{lang}/despre-biromarket/",
+            defaults: new { controller = "Home", action = "About" });
+
+        endpointRouteBuilder.MapControllerRoute(name: "BiromarketProducts",
+            pattern: $"{lang}/produse/",
+            defaults: new { controller = "Home", action = "Products" });
+
+        endpointRouteBuilder.MapControllerRoute(name: "BiromarketCategories",
+            pattern: $"{lang}/categorii/",
+            defaults: new { controller = "Home", action = "Categories" });
+
+        endpointRouteBuilder.MapControllerRoute(name: "BiromarketBrands",
+            pattern: $"{lang}/branduri/",
+            defaults: new { controller = "Home", action = "Brands" });
+
         //login
         endpointRouteBuilder.MapControllerRoute(name: "Login",
             pattern: $"{lang}/login/",
@@ -142,6 +158,15 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: "NewProducts",
             pattern: $"{lang}/newproducts/",
             defaults: new { controller = "Catalog", action = "NewProducts" });
+
+        //promotions
+        endpointRouteBuilder.MapControllerRoute(name: "Promotions",
+            pattern: $"{lang}/promotions/",
+            defaults: new { controller = "Catalog", action = "Promotions" });
+
+        endpointRouteBuilder.MapControllerRoute(name: "Promotii",
+            pattern: $"{lang}/promotii/",
+            defaults: new { controller = "Catalog", action = "Promotions" });
 
         //blog
         endpointRouteBuilder.MapControllerRoute(name: "Blog",

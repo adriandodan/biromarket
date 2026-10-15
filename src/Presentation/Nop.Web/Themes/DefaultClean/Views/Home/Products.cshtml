@@ -1,0 +1,32 @@
+@{
+    Layout = "_ColumnsOne";
+    NopHtml.AddTitleParts("Produse");
+    NopHtml.AddMetaDescriptionParts("Explorează produsele Biromarket pentru birou, școală, organizare și activități creative.");
+    NopHtml.AppendPageCssClassParts("html-bm-marketing-page html-bm-products-page");
+}
+
+<div class="bm-marketing-page">
+    <section class="bm-marketing-hero bm-marketing-hero-compact">
+        <span class="bm-marketing-eyebrow">BIROMARKET / PRODUSE</span>
+        <h1>Unelte pentru ideile de zi cu zi.</h1>
+        <p>De la lucrurile esențiale pentru birou și școală până la materiale pentru organizare și creație, găsește produse pentru fiecare plan.</p>
+        <a class="bm-marketing-button" href="@Url.RouteUrl("ProductSearch")">Caută în magazin <span aria-hidden="true">&rarr;</span></a>
+    </section>
+
+    <div class="bm-products-carousels">
+        @await Component.InvokeAsync(typeof(HomepageBestSellersViewComponent), new { displayOnProductsPage = true, productThumbPictureSize = 320 })
+        @await Component.InvokeAsync(typeof(RecentlyViewedProductsBlockViewComponent), new { productThumbPictureSize = 320, preparePriceModel = true, asCarousel = true })
+    </div>
+
+    <section class="bm-marketing-section bm-marketing-catalog-section" aria-labelledby="bm-products-heading">
+        <div class="bm-marketing-section-heading">
+            <span class="bm-marketing-eyebrow">ALEGE CE ȚI SE POTRIVEȘTE</span>
+            <h2 id="bm-products-heading">Găsește următorul lucru preferat.</h2>
+            <p>Folosește căutarea pentru a explora întregul catalog sau răsfoiește selecția de produse disponibilă în magazin.</p>
+        </div>
+        @await Component.InvokeAsync(typeof(HomepageProductsViewComponent))
+        <div class="bm-marketing-bottom-link">
+            <a class="bm-marketing-button" href="@Url.RouteUrl("ProductSearch")">Vezi toate produsele <span aria-hidden="true">&rarr;</span></a>
+        </div>
+    </section>
+</div>

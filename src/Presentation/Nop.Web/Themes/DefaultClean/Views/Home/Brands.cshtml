@@ -1,0 +1,45 @@
+@model IList<ManufacturerModel>
+
+@using Nop.Core.Domain.Catalog
+
+@{
+    Layout = "_ColumnsOne";
+    NopHtml.AddTitleParts("Branduri");
+    NopHtml.AddMetaDescriptionParts("Descoperă brandurile disponibile la Biromarket și răsfoiește produsele din catalog.");
+    NopHtml.AppendPageCssClassParts("html-bm-marketing-page");
+}
+
+<div class="bm-marketing-page">
+    <section class="bm-marketing-hero bm-marketing-hero-compact">
+        <span class="bm-marketing-eyebrow">BIROMARKET / BRANDURI</span>
+        <h1>Branduri care dau formă ideilor.</h1>
+        <p>Descoperă brandurile prezente în magazin și explorează selecția lor de produse pentru birou, școală și creație.</p>
+    </section>
+
+    <section class="bm-marketing-section" aria-labelledby="bm-brands-heading">
+        <div class="bm-marketing-section-heading">
+            <span class="bm-marketing-eyebrow">GĂSEȘTE-ȚI PREFERATELE</span>
+            <h2 id="bm-brands-heading">Explorează catalogul pe branduri.</h2>
+            <p>Alege un brand pentru a vedea produsele disponibile.</p>
+        </div>
+        @if (Model.Count > 0)
+        {
+            <div class="bm-brand-grid">
+                @foreach (var brand in Model)
+                {
+                    <a class="bm-brand-card" href="@(Url.RouteUrl<Manufacturer>(new { SeName = brand.SeName }))">
+                        <span class="bm-brand-picture">
+                            <img src="@brand.PictureModel.ImageUrl" alt="@brand.PictureModel.AlternateText" title="@brand.PictureModel.Title" loading="lazy" />
+                        </span>
+                        <span class="bm-brand-name">@brand.Name</span>
+                        <span class="bm-brand-arrow" aria-hidden="true">&nearr;</span>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="bm-brand-empty">Momentan nu sunt branduri disponibile. Revino în curând pentru noutăți.</p>
+        }
+    </section>
+</div>
